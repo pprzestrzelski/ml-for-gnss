@@ -21,6 +21,8 @@ class GnssClockData:
             elif self.file_standard == "SP3" and file.endswith(".sp3"):
                 # TODO: implement in the future
                 print("SP3 data file", file, "omitted! (NOT IMPLEMENTED YET!!!)")
+            elif os.path.isdir(self.dir_name + "/" + file):
+                print("{} is directory... omitting it".format(file))
             else:
                 print("Unknown file format (>", file, "<)")
         print("=== all files read")
