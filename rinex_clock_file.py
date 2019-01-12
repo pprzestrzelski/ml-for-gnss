@@ -95,7 +95,7 @@ class RinexClockFile:
         for i in range(self.data.size()):
             block = self.data.get(i)
             if block.contains(sat):
-                data.append([block.get_epoch(), block.get_record(sat)])
+                data.append((block.get_epoch(), block.get_record(sat)))
             else:
                 print("WARNING: missing data for {} on {}".format(sat, block.get_readable_epoch()))
         return data
