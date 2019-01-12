@@ -206,8 +206,8 @@ class RinexDate:
 
     def get_epoch(self):
         return float(self.gps_week) + float(self.gps_day) / 7 + \
-               float(self.hour) + float(self.minute) / 60 + \
-               float(self.second) / 3600
+               float(self.hour) / 7 / 24 + float(self.minute) / 7 / 24 / 60 + \
+               float(self.second) / 7 / 24 / 60 / 3600
 
     def get_readable_epoch(self):
         return "{}-{}-{} {}:{}:{}".format(self.year, self.month, self.day, self.hour, self.minute, self.second)
