@@ -71,3 +71,11 @@ if __name__ == '__main__':
     print("\n=== Show first {} predictions".format(n))
     df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
     print(df.head(n))
+
+    diff = y_test - y_pred
+    plt.plot([i for i in range(len(diff))], diff, '-r', label="Prediction")
+    plt.title('Clock correction prediction error ({})'.format(sat_number))
+    plt.ylabel('Error [ns]')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.show()

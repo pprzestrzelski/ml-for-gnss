@@ -75,6 +75,15 @@ class LinearEstimator:
         plt.legend()
         plt.show()
 
+    def plot_prediction_error(self):
+        diff = self.y_test - self.y_pred
+        plt.plot([i for i in range(len(diff))], diff, '-r', label="Prediction")
+        plt.title('Clock correction prediction error ({})'.format(self.satellite_name))
+        plt.ylabel('Error [ns]')
+        plt.xlabel('Epoch')
+        plt.legend()
+        plt.show()
+
     def print_stats(self):
         print('Liner Regression R squared: %.4f' % self.regressor.score(self.x_test, self.y_test))
         print('Mean Absolute Error: {}'.format(self.mae))
