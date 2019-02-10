@@ -1,0 +1,35 @@
+Wstępna struktura artykułu i podział prac.
+
+Legenda:
+    - Piotr Gnyś (PG)
+    - Grzegorz Krzan (GK)
+    - Paweł Przestrzelski (PP)
+
+
+LSTM in GPS:
+
+   Streszczenie (PP)
+   
+1. Wprowadzenie (GK + PP)
+    + Równanie obserwacji kodowych/fazowych z podkreśleniem wpływu błędu chodu zegara satelity
+    + Charakterystyka poprawek + źródła + opis danych z IGS
+    + Potrzeba wykonywania predykcji takich poprawek + predykcja klasycznie (w tym jak długa predykcja i ile danych do trenowania) + uzyskiwane dokładności
+    
+2. Sieci neuronowe (ang. Neural Networks - NN) do predykcji poprawek chodu zegara satelity
+    + NN w GPS dotychczas (PG + PP)
+    + Uzasadnienie zastosowania sieci LSTM w tym konkretnym przypadku wraz z opisem matematycznym modelu LSTM (czyli uwzględnienie zależności czasowych) (PG)
+    + LSTM na potrzeby predykcji zegarów GPS (PG)
+    
+3. Metodologia badań: (GK + PP + PG)
+    + charakterystyka zegarów GPS (nieco statystyki + wykresy dla wybranych, najbardziej charakterystycznych satelitów)
+    + uzasadnienie wyboru struktury sieci LSTM na podstawie powyższych wyników (przez strukturę, oprócz liczby neuronów, warstw, 
+    funkcji aktywacji itd, rozumiem tutaj także czy to będzie jedna sieć dla wszystkich satelitów, czy jeden satelita - jedna sieć);
+    trzeba to będzie pewnie zbadań empirycznie, ale logiczne przesłanki dla konkretnego rozwiązania też na pewno znajdziemy
+    + czas predykcji, długość danych trenujących, jakie dane i ich ilość, metody predykcji: klasyczna liniowa, wielomianowa (2, 4, 6, 8 stopnia?) oraz LSTM
+    
+4. Badania:
+    + predykcja różnymi metodami + rysunki + wykresy + statystyka (PP)
+    + wpływ predykcji zegara GPS przy pomocy LSTM na wyniki pozycjonownia PPP: obserwacje, liczba stacji, 
+    krótkie uzasadnienie dlaczego kinematyczna PPP, NAPEOS, parametry opracownaia danych + oczywiście omówienie wyników (GK)
+    
+5. Podsumowanie i wnioski (PP)
