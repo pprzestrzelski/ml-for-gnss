@@ -1,5 +1,3 @@
-
-
 class RinexClockFile:
     """
     Based on ftp://igs.org/pub/data/format/rinex_clock300.txt

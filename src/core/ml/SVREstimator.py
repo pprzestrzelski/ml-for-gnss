@@ -1,4 +1,4 @@
-from Estimator import Estimator
+from src.core.ml.Estimator import Estimator
 from sklearn.svm import SVR
 
 

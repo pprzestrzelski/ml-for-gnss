@@ -3,13 +3,13 @@
 
 import numpy as np
 from sklearn.model_selection import train_test_split
-from gnss_clock_data import GnssClockData
-from LinearEstimator import LinearEstimator
+from src.core.gnss.gnss_clock_data import GnssClockData
+from src.core.ml.LinearEstimator import LinearEstimator
 
 SCALE = 10.0 ** 9
 
 if __name__ == '__main__':
-    clock_data = GnssClockData()
+    clock_data = GnssClockData(dir_name="../../clock_data")
     sat_number = 'G09'
     data = clock_data.get_satellite_data(sat_number)
     epochs = []

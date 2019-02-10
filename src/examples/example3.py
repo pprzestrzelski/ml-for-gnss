@@ -1,12 +1,12 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
-from gnss_clock_data import GnssClockData
-from SVREstimator import SVREstimator
+from src.core.gnss.gnss_clock_data import GnssClockData
+from src.core.ml.SVREstimator import SVREstimator
 
 SCALE = 10.0 ** 9
 
 if __name__ == '__main__':
-    clock_data = GnssClockData()
+    clock_data = GnssClockData(dir_name="../../clock_data")
     sat_number = 'G05'
     data = clock_data.get_satellite_data(sat_number)
     epochs = []
