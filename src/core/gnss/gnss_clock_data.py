@@ -12,7 +12,7 @@ class GnssClockData:
         if add_all:
             self._add_all_data_from_dir()
 
-    def _add_all_data_from_dir(self):
+    def __add_all_data_from_dir(self):
         print("=== Reading clock data file in {} format...".format(self.file_standard))
         for file in os.listdir(self.dir_name):
             if self.file_standard == "RINEX" and (file.endswith(".clk") or file.endswith(".clk_30s")):
@@ -34,6 +34,9 @@ class GnssClockData:
         else:
             self.data[clock_data.first_epoch()] = clock_data
             print("Added file {}".format(file_path))
+
+    def read_clock_data(self):
+        self.__add_all_data_from_dir()
 
     def files_in_memory(self):
         return len(self.data)
