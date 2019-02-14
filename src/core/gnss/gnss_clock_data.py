@@ -10,7 +10,7 @@ class GnssClockData:
         self.files = []
         self.data = SortedDict()
         if add_all:
-            self._add_all_data_from_dir()
+            self.__add_all_data_from_dir()
 
     def __add_all_data_from_dir(self):
         print("=== Reading clock data file in {} format...".format(self.file_standard))
