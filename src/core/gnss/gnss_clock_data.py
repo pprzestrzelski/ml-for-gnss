@@ -15,6 +15,10 @@ class GnssClockData:
     def __add_all_data_from_dir(self):
         print("=== Reading clock data file in {} format...".format(self.file_standard))
         for file in os.listdir(self.dir_name):
+            if file in self.files:
+                print("{} is in memory. It will be skipped.".format(file))
+                continue
+
             if self.file_standard == "RINEX" and (file.endswith(".clk") or file.endswith(".clk_30s")):
                 self.files.append(file)
                 self.add_rinex_file(self.dir_name + '/' + file)
