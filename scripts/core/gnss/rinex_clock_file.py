@@ -25,7 +25,7 @@ class RinexClockFile:
                 break
 
     def __valid_clock_file(self):
-        if self.header.rinex_file_version() < 3.0 and self.header.rinex_file_type() is not 'C':
+        if self.header.rinex_version < 3.0 and self.header.rinex_type is not 'C':
             print("WARNING: this file", self.file_name, "is not RINEX >= 3.00 and of a clock type!")
             print("WARNING: RINEX clock data won't be read...")
             return False
@@ -42,26 +42,26 @@ class RinexClockFile:
 
         date, clock_record = self.__get_clock_data(line)
         data_block = RinexClockDataBlock(date)
-        data_block.add_record(clock_record.get_name(), clock_record)
+        data_block.records[clock_record.rec_sat_name] = clock_record
         self.data.add(data_block)
 
         prev_epoch = date.get_epoch()
         for line in f:
             date, clock_record = self.__get_clock_data(line)
             # data_block = RinexClockDataBlock(date)
-            data_block.add_record(clock_record.get_name(), clock_record)
+            data_block.records[clock_record.rec_sat_name] = clock_record
             epoch = date.get_epoch()
             if prev_epoch < epoch:
                 data_block = RinexClockDataBlock(date)
                 self.data.add(data_block)
                 prev_epoch = epoch
-            data_block.add_record(clock_record.get_name(), clock_record)
+            data_block.records[clock_record.rec_sat_name] = clock_record
 
     def __get_clock_data(self, line):
         arr = line.split()
         data_type = arr[0]
         name = arr[1]
-        date = RinexDate(self.header.get_gps_week(), self.header.get_gps_day(),
+        date = RinexDate(self.header.gps_week, self.header.gps_day,
                          arr[2], arr[3], arr[4], arr[5], arr[6], arr[7])
         data_count = int(arr[8])
         clock_record = None     # can remove if if-statement will be fully implemented
@@ -77,23 +77,23 @@ class RinexClockFile:
         return date, clock_record
 
     def first_epoch(self):
-        return self.data.get(0).get_epoch()
+        return self.data.get(0).epoch
 
     def count_epochs(self):
-        return self.data.size()
+        return len(self.data)
 
     def file_type(self):
-        return self.header.rinex_file_type()
+        return self.header.rinex_type
 
     def file_version(self):
-        return self.header.rinex_file_version()
+        return self.header.rinex_version
 
     def get_data(self, sat):
         data = []
-        for i in range(self.data.size()):
+        for i in range(len(self.data)):
             block = self.data.get(i)
-            if block.contains(sat):
-                data.append((block.get_epoch(), block.get_record(sat)))
+            if sat in block.records:
+                data.append((block.epoch, block.get_record(sat)))
             else:
                 print("WARNING: missing data for {} on {}".format(sat, block.get_readable_epoch()))
         return data
@@ -130,19 +130,8 @@ class RinexClockHeader:
                 return
         print("ERROR: RINEX file does not contain GPS week or GPS day")
 
-    def rinex_file_version(self):
-        return self.rinex_version
 
-    def rinex_file_type(self):
-        return self.rinex_type
-
-    def get_gps_week(self):
-        return self.gps_week
-
-    def get_gps_day(self):
-        return self.gps_day
-
-
+# FIXME: Why this exists
 class RinexClockData:
     def __init__(self):
         self.data_blocks = []   # each block is a new epoch
@@ -166,26 +155,12 @@ class RinexClockDataBlock:
         self.epoch = self.date.get_epoch()
         self.records = {}
 
-    def size(self):
+    def __len__(self):
         return len(self.records)
 
-    def add_record(self, name, record):
-        self.records[name] = record
-
+    # FIXME: If we have a way of dealing with key error then it goes here if no delete it
     def get_record(self, name):
-        return self.records[name]   # TODO: assumes 'name' record exists. Should throw error otherwise?
-
-    def contains(self, name):
-        if name in self.records:
-            return True
-        else:
-            return False
-
-    def get_date(self):
-        return self.date
-
-    def get_epoch(self):
-        return self.epoch
+        return self.records[name]
 
     def get_readable_epoch(self):
         return self.date.get_readable_epoch()
@@ -223,11 +198,8 @@ class RinexClockDataRecord:
         self.acceleration = acceleration                # per second
         self.acceleration_sigma = acceleration_sigma    # per second
 
-    def get_name(self):
-        return self.rec_sat_name
+    def __str__(self):
+        return '{}'.format(self.bias)
 
-    def get_bias(self):
-        return self.bias
-
-    def get_bias_sigma(self):
-        return self.bias_sigma
+    def __repr__(self):
+        return self.__str__()

@@ -28,7 +28,7 @@ def main():
 
     for epoch, clock_bias in data:
         epochs.append(epoch)
-        clock_biases.append(float(clock_bias.get_bias()) * SCALE)
+        clock_biases.append(float(clock_bias.bias) * SCALE)
 
     X = np.array(epochs).reshape(-1, 1)
     y = np.array(clock_biases)
