@@ -1,0 +1,6 @@
+numpy==1.16.1
+sortedcontainers==2.1.0
+matplotlib==3.0.2
+Keras==2.2.4
+pandas==0.24.1
+scikit_learn==0.20.2

@@ -3,13 +3,14 @@
 
 import numpy as np
 from sklearn.model_selection import train_test_split
-from src.core.gnss.gnss_clock_data import GnssClockData
-from src.core.ml.LinearEstimator import LinearEstimator
+from core.gnss.gnss_clock_data import GnssClockData
+from core.ml.LinearEstimator import LinearEstimator
 
 SCALE = 10.0 ** 9
 
-if __name__ == '__main__':
-    clock_data = GnssClockData(dir_name="../../clock_data")
+
+def main():
+    clock_data = GnssClockData(dir_name="clock_data")
     sat_number = 'G09'
     data = clock_data.get_satellite_data(sat_number)
     epochs = []
@@ -39,3 +40,7 @@ if __name__ == '__main__':
         res = est.stats()
         mae, mse, rms = res
         print("%15s => mae: %.4f, mse: %.4f, rms: %.4f" % (name, mae, mse, rms))
+
+
+if __name__ == '__main__':
+    main()

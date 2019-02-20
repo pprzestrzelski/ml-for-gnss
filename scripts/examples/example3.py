@@ -1,12 +1,13 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
-from src.core.gnss.gnss_clock_data import GnssClockData
-from src.core.ml.SVREstimator import SVREstimator
+from core.gnss.gnss_clock_data import GnssClockData
+from core.ml.SVREstimator import SVREstimator
 
 SCALE = 10.0 ** 9
 
-if __name__ == '__main__':
-    clock_data = GnssClockData(dir_name="../../clock_data")
+
+def main():
+    clock_data = GnssClockData(dir_name="clock_data")
     sat_number = 'G05'
     data = clock_data.get_satellite_data(sat_number)
     epochs = []
@@ -25,3 +26,7 @@ if __name__ == '__main__':
     regressor.print_stats()
     regressor.plot_prediction()
     regressor.plot_prediction_error()
+
+
+if __name__ == '__main__':
+    main()

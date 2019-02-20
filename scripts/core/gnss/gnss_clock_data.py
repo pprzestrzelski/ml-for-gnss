@@ -1,6 +1,6 @@
 import os
 from sortedcontainers import SortedDict
-from src.core.gnss.rinex_clock_file import RinexClockFile
+from core.gnss.rinex_clock_file import RinexClockFile
 
 
 class GnssClockData:

@@ -1,8 +1,8 @@
 # DESCRIPTION:
 # File presents comparison of LinearRegression (from scikit-learn package) and LinearEstimator.py
 
-from src.core.gnss.gnss_clock_data import GnssClockData
-from src.core.ml.LinearEstimator import LinearEstimator
+from core.gnss.gnss_clock_data import GnssClockData
+from core.ml.LinearEstimator import LinearEstimator
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -12,9 +12,10 @@ import numpy as np
 
 SCALE = 10.0 ** 9   # ns    1 ns => ~30 cm of an error in pseudorange
 
-if __name__ == '__main__':
+
+def main():
     # Get GNSS clock satellite data - reads from clock_data directory in default
-    clock_data = GnssClockData(dir_name="../../clock_data")
+    clock_data = GnssClockData(dir_name="clock_data")
 
     # Choose satellite to investigate
     # (interesting data: G05, G23, G24)
@@ -79,3 +80,7 @@ if __name__ == '__main__':
     plt.xlabel('Epoch')
     plt.legend()
     plt.show()
+
+
+if __name__ == '__main__':
+    main()

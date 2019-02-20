@@ -1,5 +1,5 @@
 import os
-from src.core.ml.Estimator import Estimator
+from core.ml.Estimator import Estimator
 from keras.models import Sequential
 from keras.models import load_model
 

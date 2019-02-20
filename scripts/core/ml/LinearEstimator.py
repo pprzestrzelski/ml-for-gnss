@@ -1,4 +1,4 @@
-from src.core.ml.Estimator import Estimator
+from core.ml.Estimator import Estimator
 from sklearn.linear_model import \
     (LinearRegression, TheilSenRegressor, RANSACRegressor, HuberRegressor, SGDRegressor, Ridge)
 from sklearn.preprocessing import PolynomialFeatures
