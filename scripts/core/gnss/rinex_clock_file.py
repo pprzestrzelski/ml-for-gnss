@@ -1,3 +1,6 @@
+from core.gnss.gnss_date import GnssDate
+
+
 class RinexClockFile:
     """
     Based on ftp://igs.org/pub/data/format/rinex_clock300.txt
@@ -61,8 +64,8 @@ class RinexClockFile:
         arr = line.split()
         data_type = arr[0]
         name = arr[1]
-        date = RinexDate(self.header.gps_week, self.header.gps_day,
-                         arr[2], arr[3], arr[4], arr[5], arr[6], arr[7])
+        date = GnssDate(self.header.gps_week, self.header.gps_day,
+                        arr[2], arr[3], arr[4], arr[5], arr[6], arr[7])
         data_count = int(arr[8])
         clock_record = None     # can remove if if-statement will be fully implemented
         if data_count == 2:
@@ -164,26 +167,6 @@ class RinexClockDataBlock:
 
     def get_readable_epoch(self):
         return self.date.get_readable_epoch()
-
-
-class RinexDate:
-    def __init__(self, gps_week, gps_day, year, month, day, hour, minute, second):
-        self.gps_week = gps_week
-        self.gps_day = gps_day      # gps day != calendar day (self.day)
-        self.year = year
-        self.month = month
-        self.day = day
-        self.hour = hour
-        self.minute = minute
-        self.second = second
-
-    def get_epoch(self):
-        return float(self.gps_week) + float(self.gps_day) / 7 + \
-               float(self.hour) / 7 / 24 + float(self.minute) / 7 / 24 / 60 + \
-               float(self.second) / 7 / 24 / 60 / 3600
-
-    def get_readable_epoch(self):
-        return "{}-{}-{} {}:{}:{}".format(self.year, self.month, self.day, self.hour, self.minute, self.second)
 
 
 class RinexClockDataRecord:
