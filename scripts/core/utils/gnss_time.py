@@ -9,4 +9,4 @@ def utc_to_gps_week_day(utc_time, utc_format):
     gps_week = diff / 7
     gps_day = utc.isoweekday() if utc.isoweekday() != 7 else 0
 
-    return gps_week, gps_day
+    return gps_week.days, gps_day
