@@ -95,7 +95,7 @@ class RinexClockFile:
         for i in range(len(self.data)):
             block = self.data[i]
             if sat in block.records:
-                data.append((block.epoch, block.get_record(sat)))
+                data.append((block.epoch, block.records[sat]))
             else:
                 print("WARNING: missing data for {} on {}".format(sat, block.get_readable_epoch()))
         return data
@@ -141,10 +141,6 @@ class RinexClockDataBlock:
 
     def __len__(self):
         return len(self.records)
-
-    # FIXME: If we have a way of dealing with key error then it goes here if no delete it
-    def get_record(self, name):
-        return self.records[name]
 
     def get_readable_epoch(self):
         return self.date.get_readable_epoch()
