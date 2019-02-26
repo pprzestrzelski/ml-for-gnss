@@ -68,6 +68,7 @@ class Sp3File:
     def gnss_date_from_sp3(str_line):
         year, month, day = str_line[3:7], str_line[8:10], str_line[11:13]
         hour, minute = str_line[14:16], str_line[17:19]
+        str_second = str_line[20:31]
         second_and_parts = str_line[20:31].split('.')
         second = second_and_parts[0] + '.' + second_and_parts[1][:6]    # we have to trim to 6 digits after comma
         utc_time = year.strip() + "-" + month.strip() + "-" + day.strip() + " " + \
@@ -75,7 +76,7 @@ class Sp3File:
         utc_format = "%Y-%m-%d %H:%M:%S.%f"
         gps_week, gps_day = utc_to_gps_week_day(utc_time, utc_format)
 
-        return GnssDate(float(gps_week), float(gps_day), year, month, day, hour, minute, second)
+        return GnssDate(float(gps_week), float(gps_day), year, month, day, hour, minute, str_second)
 
     def first_epoch(self):
         return self.data[0].epoch
@@ -102,6 +103,21 @@ class Sp3File:
                 elif data_to_read == 'Both':
                     data.append((self.data[i].epoch, record))
         return data
+
+    def save(self, file_name, prefix="", suffix=""):
+        file = prefix + file_name + suffix
+        with open(file, 'w') as f:
+            f.writelines(self.header.header_data)
+
+            for block in self.data:
+                f.write(block.sp3_time_line())
+                f.write('\n')
+
+                for sat in block.records.keys():
+                    f.write(block.records[sat].sp3_record())
+                    f.write('\n')
+            f.write('EOF')
+            f.write('\n')
 
 
 class Sp3Header:
@@ -139,6 +155,12 @@ class Sp3DataBlock:
         self.epoch = self.date.get_epoch()
         self.records = {}  # Sp3Record(s)
 
+    def sp3_time_line(self):
+        blank = ' '
+        return '{}{}{}{}{}{}{}{}{}{}{}{}{}'.format(
+            '* ', blank, self.date.year, blank, self.date.month, blank, self.date.day,
+            blank, self.date.hour, blank, self.date.minute, blank, self.date.second)
+
 
 class Sp3PositionRecord:
     def __init__(self, string_line):
@@ -154,14 +176,22 @@ class Sp3PositionRecord:
         self.y = string_line[18:32]       # [km]
         self.z = string_line[32:46]       # [km]
         self.clock = string_line[46:60]   # [micro sec]
-        self.x_sdev = string_line[61:63]  # [mm]
-        self.y_sdev = string_line[64:66]  # [mm]
-        self.z_sdev = string_line[67:69]  # [mm]
-        self.clock_sdev = string_line[70:73]    # [pico sec]
+        self.x_sdev = string_line[61:63]  # [mm] or ' ' (means std is unknown)
+        self.y_sdev = string_line[64:66]  # [mm] or ' ' (means std is unknown)
+        self.z_sdev = string_line[67:69]  # [mm] or ' ' (means std is unknown)
+        self.clock_sdev = string_line[70:73]    # [pico sec] or ' ' (means std is unknown)
         self.clock_event_flag = string_line[74]    # ' ' or 'E'
         self.clock_pred_flag = string_line[75]     # ' ' or 'P'
         self.maneuver_flag = string_line[78]       # ' ' or 'M'
         self.orbit_pred_flag = string_line[79]     # ' ' or 'P'
+
+    def sp3_record(self):
+        blank = ' '
+        return '{:1s}{:3s}{:14.6f}{:14.6f}{:14.6f}{:14.6f}{}{:2s}{}{:2s}{}{:2s}{}{:3s}{}{:1s}{:1s}{}{}{:1s}{:1s}'\
+            .format(self.symbol, self.sat, float(self.x), float(self.y), float(self.z), float(self.clock), blank,
+                    self.x_sdev, blank,self.y_sdev, blank, self.z_sdev, blank, self.clock_sdev,
+                    blank, self.clock_event_flag, self.clock_pred_flag, blank, blank, self.maneuver_flag,
+                    self.orbit_pred_flag)
 
 
 class Sp3VelocityRecord:
