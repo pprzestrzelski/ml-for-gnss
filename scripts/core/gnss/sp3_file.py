@@ -128,6 +128,9 @@ class Sp3Header:
         self.gps_week = "-1"
         self.gps_day = "-1"
         self.__read_gps_week_and_day()
+        self.base_for_pos_vel_acc = None
+        self.base_for_clk_rate_acc = None
+        self.__read_acc_bases()
 
     def __read_file_version(self):
         return self.header_data[0][1]
@@ -144,6 +147,10 @@ class Sp3Header:
         utc_time = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second
         utc_format = "%Y-%m-%d %H:%M:%S.%f"
         self.gps_week, self.gps_day = utc_to_gps_week_day(utc_time, utc_format)
+
+    def __read_acc_bases(self):
+        self.base_for_pos_vel_acc = self.header_data[14][3:13]
+        self.base_for_clk_rate_acc = self.header_data[14][14:26]
 
 
 class Sp3DataBlock:
@@ -168,8 +175,17 @@ class Sp3PositionRecord:
         Gets data as a string and slices it according to the sp3c file
         specification (ftp://igs.org/pub/data/format/sp3c.txt)
         (no, so may blank spaces is not mistake).
+
+        Values of (X, Y, Z) and Clock standard deviations given here (in the sp3 position record) are only
+        exponents for accuracy (precision). Accuracy (precision) values can be obtained according to:
+            acc = b ** n
+            where: acc - accuracy (precision) in mm or psec (for pos or clk respectively)
+                   b - is a base from Sp3 Header (usually 1.25 and 1.05 for pos and clk respectively)
+                   n - pos/clock sdev (empty, i.e. ' ', sdev value in the Sp3 position record means std is unknown)
+
         :param string_line: e.g. "PG01 -16355.997140  -2581.834262  20666.202859    -96.730418 11  7  7 215       "
         """
+
         self.symbol = string_line[0]    # 'P'
         self.sat = string_line[1:4]     # e.g. 'G01'
         self.x = string_line[4:18]        # [km]
@@ -189,7 +205,7 @@ class Sp3PositionRecord:
         blank = ' '
         return '{:1s}{:3s}{:14.6f}{:14.6f}{:14.6f}{:14.6f}{}{:2s}{}{:2s}{}{:2s}{}{:3s}{}{:1s}{:1s}{}{}{:1s}{:1s}'\
             .format(self.symbol, self.sat, float(self.x), float(self.y), float(self.z), float(self.clock), blank,
-                    self.x_sdev, blank,self.y_sdev, blank, self.z_sdev, blank, self.clock_sdev,
+                    self.x_sdev, blank, self.y_sdev, blank, self.z_sdev, blank, self.clock_sdev,
                     blank, self.clock_event_flag, self.clock_pred_flag, blank, blank, self.maneuver_flag,
                     self.orbit_pred_flag)
 
