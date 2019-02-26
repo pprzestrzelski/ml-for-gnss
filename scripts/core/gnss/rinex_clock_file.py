@@ -10,7 +10,7 @@ class RinexClockFile:
         self.file_name = file_path      # FIXME: it is not true for absolute path!
         # RINEX file consists of two parts: header and data (e.g. obs, nav or ... clock:))
         self.header = None
-        self.data = None
+        self.data = []  # RinexClockDataBlock(s)
         self.__read_file(file_path)
 
     def __read_file(self, path):
@@ -37,7 +37,6 @@ class RinexClockFile:
 
     def __read_data(self, f):
         # FIXME: only one line of data per sat/rec is assumed! In fact it may be more than one
-        self.data = RinexClockData()
         line = f.readline()
         if line is None or line == "":
             print("WARNING: no data in the RINEX data section!")
@@ -46,7 +45,7 @@ class RinexClockFile:
         date, clock_record = self.__get_clock_data(line)
         data_block = RinexClockDataBlock(date)
         data_block.records[clock_record.rec_sat_name] = clock_record
-        self.data.add(data_block)
+        self.data.append(data_block)
 
         prev_epoch = date.get_epoch()
         for line in f:
@@ -56,7 +55,7 @@ class RinexClockFile:
             epoch = date.get_epoch()
             if prev_epoch < epoch:
                 data_block = RinexClockDataBlock(date)
-                self.data.add(data_block)
+                self.data.append(data_block)
                 prev_epoch = epoch
             data_block.records[clock_record.rec_sat_name] = clock_record
 
@@ -80,7 +79,7 @@ class RinexClockFile:
         return date, clock_record
 
     def first_epoch(self):
-        return self.data.get(0).epoch
+        return self.data[0].epoch
 
     def count_epochs(self):
         return len(self.data)
@@ -94,7 +93,7 @@ class RinexClockFile:
     def get_data(self, sat):
         data = []
         for i in range(len(self.data)):
-            block = self.data.get(i)
+            block = self.data[i]
             if sat in block.records:
                 data.append((block.epoch, block.get_record(sat)))
             else:
@@ -132,24 +131,6 @@ class RinexClockHeader:
                         self.gps_day = arr[i+1]
                 return
         print("ERROR: RINEX file does not contain GPS week or GPS day")
-
-
-# FIXME: Why this exists
-class RinexClockData:
-    def __init__(self):
-        self.data_blocks = []   # each block is a new epoch
-
-    def __len__(self):
-        return len(self.data_blocks)
-
-    def add(self, block):
-        self.data_blocks.append(block)
-
-    def get(self, index):
-        return self.data_blocks[index]
-
-    def size(self):
-        return len(self.data_blocks)
 
 
 class RinexClockDataBlock:
