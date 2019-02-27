@@ -119,6 +119,37 @@ class Sp3File:
             f.write('EOF')
             f.write('\n')
 
+    def update_clock(self, sat, epochs, clock_data, data_type):
+        """
+        Method updates satellite clock data within given epochs and chosen data type (predicted or observed).
+        It assumes pairs of epochs and clock data sorted ascending as an input.
+        :param sat: GNSS satellite name, e.g. 'G01' is the GPS satellite #01
+        :param epochs: array of epochs [floats or strings]
+        :param clock_data: array of clock biases as [floats or strings]
+        :param data_type: 'Predicted' or 'Observed' data type to update
+        """
+        i = 0
+        for j in range(len(self.data)):
+            if self.data[j].epoch == float(epochs[0]):
+                break
+
+            i += 1
+            if i == len(self.data):
+                print("ERROR: could't find requested data")
+                return
+
+        for k in range(len(epochs)):
+            record = self.data[i].records[sat]
+
+            if record.symbol == 'P' and data_type == 'Predicted' \
+                    or record.symbol == ' ' and data_type == 'Observed':
+                record.clock = clock_data[k]
+            else:
+                print("ERROR: found epoch but data type to update is not the right one")
+                return
+
+            i += 1
+
 
 class Sp3Header:
     def __init__(self, array_data):
