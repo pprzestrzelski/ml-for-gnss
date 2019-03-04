@@ -6,6 +6,7 @@ INPUT_SIZE = 10
 HIDDEN_SIZE = 512
 
 def buid_input_output_pairs(sequence, input_size):
+    sequence = [float(x) for x in sequence]
     input_chunks = [sequence[x:x + input_size] for x in range(0, len(sequence), input_size)]
     #output_chunks = [sequence[(x+1):(x+1+input_size)] for x in range(0, len(sequence), input_size)]
     output_chunks = []
@@ -31,8 +32,8 @@ def teach_network(inputs, outputs):
         tf.keras.layers.Dense(INPUT_SIZE, activation=tf.nn.relu)
     ])
     model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
+                  loss='mean_squared_error',
+                  metrics=['sparse_categorical_crossentropy'])
 
     model.fit(inputs, outputs, epochs=5)
 
@@ -43,6 +44,7 @@ def main():
     data = clock_data.get_satellite_data(sat_number)
     data = [x[1].bias for x in data]
     train_in, train_out = buid_input_output_pairs(data, INPUT_SIZE)
+    print('Input shape = {}'.format(train_in.shape))
     teach_network(train_in, train_out)
     print('Loaded data type : {}'.format(type(data)))
     print('Loaded data length : {}'.format(len(data)))
