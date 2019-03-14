@@ -12,6 +12,7 @@ class ClockDataConverter:
         self.dir_modified_csv = ""
         self.__create_dir_structure()
         self.csv_sep = ';'
+        self.sp3_data_type = "Observed"
 
     def __create_dir_structure(self):
         """
@@ -60,6 +61,12 @@ class ClockDataConverter:
         else:
             print("WARNING: given file is not a GnssClockData file!")
 
+    def set_sp3_data_type(self, data_type):
+        if data_type not in ["Observed", "Predicted", "Both"]:
+            print("WARNING: invalid data type \"{}\"".format(data_type))
+        else:
+            self.sp3_data_type = data_type
+
     def data_to_csv(self):
         scale = 10.0 ** 9 if self.__data.file_standard == "RINEX" else 10.0 ** 3
         for sat in GPS_SATS:
@@ -67,7 +74,12 @@ class ClockDataConverter:
             with open(csv_path, 'w') as csv_file:
                 header = "Epoch" + self.csv_sep + "Clock_bias"
                 csv_file.write(header + '\n')
-                data = self.__data.get_satellite_data(sat)
+                if self.__data.file_standard == "RINEX":
+                    data = self.__data.get_satellite_data(sat)
+                elif self.__data.file_standard == "SP3":
+                    data = self.__data.get_satellite_data(sat, data_type=self.sp3_data_type)
+                else:
+                    data = []
                 for epoch, clock_bias in data:
                     csv_file.write("{}{}{}\n".format(epoch, self.csv_sep, float(clock_bias.bias) * scale))
 
