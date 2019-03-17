@@ -22,8 +22,8 @@ class BatchGenerator:
                     self.index = 0
                 X[i, :] = self.data[self.index:self.index + self.sequence_length].reshape(self.sequence_length)
                 Y[i, :] = self.data[self.index + 1:self.index + 1 + self.sequence_length].reshape(self.sequence_length)
-            X = X.reshape(1, 3, 10)
-            Y = Y.reshape(1, 3, 10)
+            X = X.reshape(1, self.batch_size, self.sequence_length)
+            Y = Y.reshape(1, self.batch_size, self.sequence_length)
             yield X, Y
 
 
@@ -43,13 +43,13 @@ def main():
     sequence_size = 10
     batch_size = 3
     hidden_size = 10
-    gen = BatchGenerator.random_data(100,sequence_size,batch_size)
+    gen = BatchGenerator.random_data(1000,sequence_size,batch_size)
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.LSTM(sequence_size, return_sequences=True, input_shape=(batch_size,sequence_size)))
     model.add(tf.keras.layers.LSTM(hidden_size, return_sequences=True))
     #model.add(tf.keras.layers.Activation('LeakyReLU'))
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
-    model.fit_generator(gen.generate(), steps_per_epoch=10, epochs=10)
+    model.fit_generator(gen.generate(), steps_per_epoch=100, epochs=10)
 
 if __name__ == '__main__':
     main()
