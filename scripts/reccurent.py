@@ -14,16 +14,16 @@ class BatchGenerator:
         self.index = 0
 
     def generate(self):
-        X = np.zeros((self.batch_size, self.sequence_length))
-        Y = np.zeros((self.batch_size, self.sequence_length))
         while True:
+            X = np.zeros((self.batch_size, self.sequence_length))
+            Y = np.zeros((self.batch_size, self.sequence_length))
             for i in range(self.batch_size):
                 if self.index + self.sequence_length >= len(self.data):
                     self.index = 0
                 X[i, :] = self.data[self.index:self.index + self.sequence_length].reshape(self.sequence_length)
                 Y[i, :] = self.data[self.index + 1:self.index + 1 + self.sequence_length].reshape(self.sequence_length)
-            print('SHAPE = {}'.format(X.shape))
             X = X.reshape(1, 3, 10)
+            Y = Y.reshape(1, 3, 10)
             yield X, Y
 
 
@@ -48,8 +48,8 @@ def main():
     model.add(tf.keras.layers.LSTM(sequence_size, return_sequences=True, input_shape=(batch_size,sequence_size)))
     model.add(tf.keras.layers.LSTM(hidden_size, return_sequences=True))
     #model.add(tf.keras.layers.Activation('LeakyReLU'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categorical_accuracy'])
-    model.fit_generator(gen.generate(), steps_per_epoch=3)
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
+    model.fit_generator(gen.generate(), steps_per_epoch=10, epochs=10)
 
 if __name__ == '__main__':
     main()
