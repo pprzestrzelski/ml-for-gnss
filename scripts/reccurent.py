@@ -6,7 +6,7 @@ import sys
 class Config:
 
     def __init__(self, sequence_size, batch_size, hidden_size, sequence_shift,
-                 loss_function, steps_per_epoch, epochs):
+                 loss_function, steps_per_epoch, epochs, weights_file):
         self.sequence_size = sequence_size
         self.batch_size = batch_size
         self.hidden_size = hidden_size
@@ -14,6 +14,7 @@ class Config:
         self.loss_function = loss_function
         self.steps_per_epoch = steps_per_epoch
         self.epochs = epochs
+        self.weights_file = weights_file
 
 
     @staticmethod
@@ -63,10 +64,11 @@ class NeuralNetwork:
 
     def fit(self, generator, cfg):
         # FIXME: Make checkpoints work
-        #checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath='checkopints' + '/model-{epoch:02d}.hdf5', verbose=1)
+        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath='checkpoints' + '/model-{epoch:02d}.hdf5', verbose=1)
         self.model.fit_generator(generator.generate(),
                                  steps_per_epoch=cfg.steps_per_epoch,
-                                 epochs=cfg.epochs)
+                                 epochs=cfg.epochs,
+                                 callbacks = [checkpointer])
 
     @staticmethod
     def build_lstm_model(cfg):
@@ -77,6 +79,12 @@ class NeuralNetwork:
         model.add(tf.keras.layers.LSTM(cfg.hidden_size, return_sequences=True))
         model.compile(loss=cfg.loss_function, optimizer='adam', metrics=['mae'])
         return NeuralNetwork(model)
+
+    @staticmethod
+    def build_lstm_model(cfg):
+        nn = NeuralNetwork.build_lstm_model(cfg)
+        nn.model.load_weights
+    
 
 def main():
     input_csv = None
