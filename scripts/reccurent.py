@@ -24,6 +24,16 @@ def load_config(filename):
         print(e)
     return cfg
 
+def default_config():
+    return {
+        'sequence_size' : 10,
+    'batch_size' : 3,
+    'hidden_size' : 10,
+    'sequence_shift' : 1,
+    'loss_function' : 'mean_squared_error',
+    'steps_per_epoch' : 100,
+    'epochs' : 10
+    }
                 
 class BatchGenerator:
 
@@ -55,9 +65,11 @@ class BatchGenerator:
         return BatchGenerator(data.values, sequence_length, batch_size)
 
     @staticmethod
-    def load_csv(filename):
+    def load_csv(filename, sequence_length, batch_size):
         data = pd.read_csv(filename)
-        return BatchGenerator(data.values)
+        data = data['Clock_bias']
+        print(data)
+        return BatchGenerator(data.values, sequence_length, batch_size)
 
 
 class NeuralNetwork:
@@ -91,9 +103,16 @@ class NeuralNetwork:
     
 
 def main():
-    cfg = load_config('configs/demo.txt')
-    input_csv = None
-    gen = BatchGenerator.random_data(1000, cfg['sequence_size'], cfg['batch_size'])
+    cfg = None
+    gen = None
+    if len(sys.argv) > 1:
+        cfg = load_config(sys.argv[1])
+    else:
+        cfg = default_config()
+    if len(sys.argv) > 2:
+        gen = BatchGenerator.load_csv(sys.argv[2], cfg['sequence_size'], cfg['batch_size'])
+    else:
+        gen = BatchGenerator.random_data(1000, cfg['sequence_size'], cfg['batch_size'])
     nn = NeuralNetwork.build_lstm_model(cfg)
     nn.fit(gen, cfg)
 
