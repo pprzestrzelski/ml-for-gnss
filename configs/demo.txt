@@ -1,0 +1,7 @@
+sequence_size=10
+batch_size=3
+hidden_size=10
+sequence_shift=1
+loss_function=mean_squared_error
+steps_per_epoch=100
+epochs=10

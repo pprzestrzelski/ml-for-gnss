@@ -3,25 +3,28 @@ import numpy as np
 import tensorflow as tf
 import sys
 
-class Config:
 
-    def __init__(self, sequence_size, batch_size, hidden_size, sequence_shift,
-                 loss_function, steps_per_epoch, epochs, weights_file):
-        self.sequence_size = sequence_size
-        self.batch_size = batch_size
-        self.hidden_size = hidden_size
-        self.sequence_shift = sequence_shift
-        self.loss_function = loss_function
-        self.steps_per_epoch = steps_per_epoch
-        self.epochs = epochs
-        self.weights_file = weights_file
+def load_config(filename):
+    cfg = {}
+    try:
+        with open(filename, 'r') as cfg_file:
+            for line in cfg_file:
+                if line[0] == '#': continue
+                key, value = line.split('=')
+                try:
+                    value = int(value)
+                except:
+                    try:
+                        value = float(value)
+                    except:
+                        pass
+                cfg[key] = value
+    except Exception as e:
+        print('Error occured when loading configuration file.')
+        print(e)
+    return cfg
 
-
-    @staticmethod
-    def demo_config():
-        return Config(10, 3, 10, 1, 'mean_squared_error', 100, 10)
-
-
+                
 class BatchGenerator:
 
     def __init__(self, data, sequence_length, batch_size, skip=1):
@@ -66,30 +69,31 @@ class NeuralNetwork:
         # FIXME: Make checkpoints work
         checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath='checkpoints' + '/model-{epoch:02d}.hdf5', verbose=1)
         self.model.fit_generator(generator.generate(),
-                                 steps_per_epoch=cfg.steps_per_epoch,
-                                 epochs=cfg.epochs,
+                                 steps_per_epoch=cfg['steps_per_epoch'],
+                                 epochs=cfg['epochs'],
                                  callbacks = [checkpointer])
 
     @staticmethod
     def build_lstm_model(cfg):
         model = tf.keras.Sequential()
-        model.add(tf.keras.layers.LSTM(cfg.sequence_size,
+        model.add(tf.keras.layers.LSTM(cfg['sequence_size'],
                                        return_sequences=True,
-                                       input_shape=(cfg.batch_size, cfg.sequence_size)))
-        model.add(tf.keras.layers.LSTM(cfg.hidden_size, return_sequences=True))
-        model.compile(loss=cfg.loss_function, optimizer='adam', metrics=['mae'])
+                                       input_shape=(cfg['batch_size'], cfg['sequence_size'])))
+        model.add(tf.keras.layers.LSTM(cfg['hidden_size'], return_sequences=True))
+        # FIXME : Loss function should read from config file
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
         return NeuralNetwork(model)
 
     @staticmethod
-    def build_lstm_model(cfg):
+    def load_lstm_model(cfg):
         nn = NeuralNetwork.build_lstm_model(cfg)
         nn.model.load_weights
     
 
 def main():
+    cfg = load_config('configs/demo.txt')
     input_csv = None
-    cfg = Config.demo_config()
-    gen = BatchGenerator.random_data(1000, cfg.sequence_size, cfg.batch_size)
+    gen = BatchGenerator.random_data(1000, cfg['sequence_size'], cfg['batch_size'])
     nn = NeuralNetwork.build_lstm_model(cfg)
     nn.fit(gen, cfg)
 
