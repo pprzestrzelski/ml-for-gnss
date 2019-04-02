@@ -97,6 +97,19 @@ class NeuralNetwork:
         return NeuralNetwork(model)
 
     @staticmethod
+    def build_lstm_dense_model(cfg):
+        model = tf.keras.Sequential()
+        model.add(tf.keras.layers.LSTM(cfg['sequence_size'],
+                                       return_sequences=True,
+                                       input_shape=(cfg['batch_size'], cfg['sequence_size'])))
+        model.add(tf.keras.layers.Dense(cfg['hidden_size']))
+        model.add(tf.keras.layers.LSTM(cfg['sequence_size'], return_sequences=True))
+        # FIXME : Loss function should read from config file
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
+        return NeuralNetwork(model)
+
+
+    @staticmethod
     def load_lstm_model(cfg):
         nn = NeuralNetwork.build_lstm_model(cfg)
         nn.model.load_weights
@@ -113,7 +126,7 @@ def main():
         gen = BatchGenerator.load_csv(sys.argv[2], cfg['sequence_size'], cfg['batch_size'])
     else:
         gen = BatchGenerator.random_data(1000, cfg['sequence_size'], cfg['batch_size'])
-    nn = NeuralNetwork.build_lstm_model(cfg)
+    nn = NeuralNetwork.build_lstm_dense_model(cfg)
     nn.fit(gen, cfg)
 
 
