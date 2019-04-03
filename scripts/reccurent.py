@@ -67,7 +67,7 @@ class BatchGenerator:
     @staticmethod
     def load_csv(filename, sequence_length, batch_size):
         data = pd.read_csv(filename)
-        data = data['Clock_bias']
+        data = data['Clock_bias'].diff().fillna(0)
         print(data)
         return BatchGenerator(data.values, sequence_length, batch_size)
 
