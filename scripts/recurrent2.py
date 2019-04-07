@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
+import argparse as ap
 import sys
 
 #===================================================================================================
@@ -81,6 +82,43 @@ class TrainingDataBatch:
 #                                   Właściwa sieć neuronowa
 #===================================================================================================
 
+
+# Klasa zawiera w sobie wszystkie funkcjonalności sieci neuronowej
+class NeuralNetwork:
+
+    def __init__(self, model):
+        self.model = model
+
+
+    @staticmethod
+    def build_lstm(sequence_size, batch_size, hidden_size, weight_file=None):
+        model = tf.keras.Sequential()
+        # Pierwsza warsrwa to LSTM, jej rozmiar musi odpowiadać ilości elementów w sekwencji
+        model.add(tf.keras.layers.LSTM(sequence_size,
+                                       return_sequences=True,
+                                       input_shape=(batch_size, sequence_size)))
+        # Warstwą ukrytą jest warstwa w pełni połączona, może być dowolnego rozmiaru
+        model.add(tf.keras.layers.Dense(hidden_size))
+        # Na sam koniec dajemy drugą warstwę LSTM
+        model.add(tf.keras.layers.LSTM(sequence_size, return_sequences=True))
+        if weight_file is not None:
+            model.load_weights(weight_file)
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
+        return NeuralNetwork(model)
+
+    # Uczenie sieci
+    def fit(self, data_batch, steps_per_epoch, epochs, weight_folder='checkpoints'):
+        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/model-{epoch:02d}.hdf5', verbose=1)
+        self.model.fit_generator(data_batch.generate(),
+                                 steps_per_epoch=steps_per_epoch,
+                                 epochs=epochs,
+                                 callbacks = [checkpointer])
+
+
+#===================================================================================================
+#                                    Wczytywanie konfiguracji
+#===================================================================================================
+
 # Funkcja wczytująca proste pliki konfiguracyjne w styly ".properties"
 def load_config(filename):
     cfg = {}
@@ -103,47 +141,38 @@ def load_config(filename):
     return cfg
 
 
-# Klasa zawiera w sobie wszystkie funkcjonalności sieci neuronowej
-class NeuralNetwork:
-
-    def __init__(self, model):
-        self.model = model
-
-
-    @staticmethod
-    def build_lstm(cfg_file, weight_file=None):
-        cfg = load_config(cfg_file)
-        model = tf.keras.Sequential()
-        # Pierwsza warsrwa to LSTM, jej rozmiar musi odpowiadać ilości elementów w sekwencji
-        model.add(tf.keras.layers.LSTM(cfg['sequence_size'],
-                                       return_sequences=True,
-                                       input_shape=(cfg['batch_size'], cfg['sequence_size'])))
-        # Warstwą ukrytą jest warstwa w pełni połączona, może być dowolnego rozmiaru
-        model.add(tf.keras.layers.Dense(cfg['hidden_size']))
-        # Na sam koniec dajemy drugą warstwę LSTM
-        model.add(tf.keras.layers.LSTM(cfg['sequence_size'], return_sequences=True))
-        if weight_file is not None:
-            model.load_weights(weight_file)
-        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
-        return NeuralNetwork(model)
-
-    # Uczenie sieci
-    def fit(self, data_batch, cfg_file, weight_folder='checkpoints'):
-        cfg = load_config(cfg_file)
-        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/model-{epoch:02d}.hdf5', verbose=1)
-        self.model.fit_generator(data_batch.generate(),
-                                 steps_per_epoch=cfg['steps_per_epoch'],
-                                 epochs=cfg['epochs'],
-                                 callbacks = [checkpointer])
-
+# Funkcja przygotowuje parser dla linii poleceń
+def prepare_argparser():
+    parser = ap.ArgumentParser()
+    parser.add_argument('-i', "--input", help="Path to clock csv data",
+                        type=str)
+    parser.add_argument('-o', "--output", help="Name of file to which output will be saved in prediction mode",
+                        type=str)
+    parser.add_argument('-c', "--config", help="Path to configuration file",
+                        type=str)
+    parser.add_argument('-t', "--train", help="Train network on given data",
+                        action='store_true')
+    parser.add_argument('-e', "--evaluate", help="Evaluate network on given data",
+                        action='store_true')
+    parser.add_argument('-p', "--predict", help="Predict future errors from given data",
+                        action='store_true')
+    parser.add_argument('-d', "--depth", help="Number of readouts that will be predicted",
+                        type=int)
+    return parser
+    
+    
+    
 
 # Główna funkcja skryptu
 def main():
-    ed = ErrorData.load_csv(sys.argv[1])
+    args = prepare_argparser().parse_args()
+    
+    ed = ErrorData.load_csv(args.input)
     visualise_error_data(ed)
-    tb = TrainingDataBatch(ed,10,1,3)
-    net = NeuralNetwork.build_lstm('configs/demo.txt')
-    net.fit(tb,'configs/demo.txt')
+    cfg = load_config(args.config)
+    tb = TrainingDataBatch(ed, cfg['sequence_size'], cfg['step'], cfg['batch_size'])
+    net = NeuralNetwork.build_lstm(cfg['sequence_size'], cfg['batch_size'], cfg['hidden_size'])
+    net.fit(tb, cfg['steps_per_epoch'], cfg['epochs'])
     
 if __name__ == '__main__':
     main()
