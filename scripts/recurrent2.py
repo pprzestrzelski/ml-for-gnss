@@ -34,6 +34,19 @@ class ErrorData:
         raw_data = raw_data.to_numpy() / scale
         return ErrorData(t0, dt, e0, scale, raw_data)
 
+    def save_csv(self, filename):
+        data = self.raw_data * self.scale # Skalujemy z powrotem do oryginalnych wartości
+        data[0] = self.e0 # Ustawiamy wstępny błąd jako pierwszą wartość
+        data = np.cumsum(data) # Każda wartość będzie teraz sumą wszystkich poprzednich
+        # Tworzymy tablicę z wartościami zaczynającymi się od zerowej epoki a następnie
+        # inkrementowanymi o wartość przyrostu czasu. Tablica będzie miała taki sam
+        # rozmiar jak data
+        epochs = np.arange(self.t0, self.t0+self.dt*data.shape[0], self.dt)
+        d_frame = {'Epoch':epochs, 'Clock_bias':data}
+        df = pd.DataFrame(d_frame, columns=['Epoch', 'Clock_bias'])
+        df.to_csv(filename, index=False) # Zapisz do pliku csv bez numerowania wierszy
+
+
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
 def visualise_error_data(ed):
     plt.plot(ed.raw_data)
@@ -150,6 +163,8 @@ def prepare_argparser():
                         type=str)
     parser.add_argument('-c', "--config", help="Path to configuration file",
                         type=str)
+    parser.add_argument('-w', "--weights", help="Path to weights file",
+                        type=str, default=None)
     parser.add_argument('-t', "--train", help="Train network on given data",
                         action='store_true')
     parser.add_argument('-e', "--evaluate", help="Evaluate network on given data",
@@ -166,13 +181,15 @@ def prepare_argparser():
 # Główna funkcja skryptu
 def main():
     args = prepare_argparser().parse_args()
-    
+
     ed = ErrorData.load_csv(args.input)
+    ed.save_csv('TEST.txt')
     visualise_error_data(ed)
     cfg = load_config(args.config)
-    tb = TrainingDataBatch(ed, cfg['sequence_size'], cfg['step'], cfg['batch_size'])
-    net = NeuralNetwork.build_lstm(cfg['sequence_size'], cfg['batch_size'], cfg['hidden_size'])
-    net.fit(tb, cfg['steps_per_epoch'], cfg['epochs'])
+    net = NeuralNetwork.build_lstm(cfg['sequence_size'], cfg['batch_size'], cfg['hidden_size'], args.weights)
+    if args.train:
+        tb = TrainingDataBatch(ed, cfg['sequence_size'], cfg['step'], cfg['batch_size'])
+        net.fit(tb, cfg['steps_per_epoch'], cfg['epochs'])
     
 if __name__ == '__main__':
     main()
