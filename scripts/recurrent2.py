@@ -91,6 +91,75 @@ class TrainingDataBatch:
             yield X, Y
         
 
+# Klasa generująca wejścia dla kerasa podczas predykcji, będzie generować wejścia do chwili w
+# której głębokość predykcji (ilość wartości wygenerowanych przez sieć) nie osiągnie zadanego
+# limitu.
+# TODO: To napewno da się ładniej zrobić
+class PredictionDataBatch:
+
+    def __init__(self, base, seq_len, step, prediction_depth):
+        self.base = base # Ciąg odchyleń stanowiący podstawę dla predykcji
+        self.step = step # O ile elementów przesówamy sekwencje pomiędzy cyklami sieci
+        self.seq_len = seq_len # Długość sekwencji podawanej na wejście sieci
+        self.prediction_depth = prediction_depth # Ilość wartości która ma zostać przewidziana
+        self.predicted_count = 0 # Ilość już przewidzianych elementów
+        self.idx = 1 # Pozycja pierwszego elementu wejścia sieci w ciągu
+        self.predicted = [] # Elementy przewidziane (nie używać len(predicted) !!!!)
+
+    # Dzięki tej funkcji możemy łatwo iterować bo obiekcie za pomocą funkcji for
+    def __iter__(self):
+        return self
+
+    # Ta funkcja faktycznie ogarnia iterowanie
+    def __next__(self):
+        if self.predicted_count >= self.prediction_depth:
+            raise StopIteration
+        dat = self.base.raw_data # Dla lepszej czytelności
+        X = None
+        # Sprawdzamy czy wykożystujemy jeszcze bazę
+        if self.idx < len(dat):
+            # Jeżeli wykożystujemy tylko bazę to nie ma tu zbyt dużej filozofi
+            if self.idx+self.seq_len< len(dat):
+                X = dat[self.idx:self.idx+self.seq_len].reshape(1,self.seq_len)
+                self.idx += self.step
+            else:
+                from_base = dat[self.idx:] # Pobieramy wszystko co możemy z bazy
+                # Potem dobieramy do tego elementy z przewidzianych
+                from_prediction = np.asarray(self.predicted, dtype=np.float64)
+                # TODO : Przyjmujemy śmiałe założenie że te dwie listy mają łącznie
+                # długość odpowiadająca oczekiwanej długości wejścia.
+                # To możeokazać się nieprawdziwe.
+                X = np.hstack([from_base, from_prediction])
+                self.idx += self.step
+                self.predicted_count += self.step
+        else:
+            # Ponieważ nie używamy już bazy trzeba odjąć jej rozmmiar od indeksu
+            id = self.idx - len(dat)
+            X = self.predicted[self.idx,self.idx+self.seq_len]
+            self.idx += self.step
+            self.predicted_count += self.step
+        return X.reshape(1,1,self.seq_len)
+
+    # Dodajemy wartości przewidziane z wyjścia sieci neuronowej
+    def update(self, predictions):
+        update_size = self.predicted_count > len(self.predicted)
+        if update_size > 0: 
+            self.predicted.append(predictions[-update_size])
+
+    def build_error_data(self, concatenate_base=True):
+        dat = None
+        t0 = self.base.t0
+        e0 = self.base.e0
+        if concatenate_base:
+            dat = np.hstack([self.base.raw_data, np.asarray(self.predicted, dtype=np.float64)])
+        else:
+            dat = np.asarray(self.predicted, dtype=np.float64)
+            # Jeżeli nie dołączamy danych bazowych należy uaktualnić wartości początkowe
+            # tak żeby pokrywały się z stanem na końcu bazy
+            t0 += self.base.dt * len(self.base.raw_data)
+            e0 += (self.base.raw_data*self.base.scale).sum()
+        return ErrorData(t0, self.base.dt, e0, self.base.scale, dat)
+
 #===================================================================================================
 #                                   Właściwa sieć neuronowa
 #===================================================================================================
@@ -126,6 +195,10 @@ class NeuralNetwork:
                                  steps_per_epoch=steps_per_epoch,
                                  epochs=epochs,
                                  callbacks = [checkpointer])
+
+    # Opakowanie funkcji przewidującej
+    def predict(self, X):
+        return self.model.predict(X)
 
 
 #===================================================================================================
@@ -183,13 +256,16 @@ def main():
     args = prepare_argparser().parse_args()
 
     ed = ErrorData.load_csv(args.input)
-    ed.save_csv('TEST.txt')
     visualise_error_data(ed)
     cfg = load_config(args.config)
     net = NeuralNetwork.build_lstm(cfg['sequence_size'], cfg['batch_size'], cfg['hidden_size'], args.weights)
     if args.train:
         tb = TrainingDataBatch(ed, cfg['sequence_size'], cfg['step'], cfg['batch_size'])
         net.fit(tb, cfg['steps_per_epoch'], cfg['epochs'])
-    
+    elif args.predict:
+        pb = PredictionDataBatch(ed, cfg['sequence_size'], cfg['step'], args.depth)
+        for X in pb:
+            pb.update(net.predict(X))
+            
 if __name__ == '__main__':
     main()
