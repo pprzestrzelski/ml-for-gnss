@@ -22,7 +22,7 @@ class ErrorData:
 
     @staticmethod
     def load_csv(filename, scale=None):
-        data = pd.read_csv(filename)
+        data = pd.read_csv(filename, sep=';')
         t0 = data['Epoch'][0]
         dt = data['Epoch'][1] - data['Epoch'][0]
         e0 = data['Clock_bias'][0]
@@ -44,7 +44,7 @@ class ErrorData:
         epochs = np.arange(self.t0, self.t0+self.dt*data.shape[0], self.dt)
         d_frame = {'Epoch':epochs, 'Clock_bias':data}
         df = pd.DataFrame(d_frame, columns=['Epoch', 'Clock_bias'])
-        df.to_csv(filename, index=False) # Zapisz do pliku csv bez numerowania wierszy
+        df.to_csv(filename, index=False, sep=';') # Zapisz do pliku csv bez numerowania wierszy
 
 
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
@@ -269,6 +269,7 @@ def main():
         pb = PredictionDataBatch(ed, cfg['sequence_size'], cfg['step'], args.depth)
         for X in pb:
             pb.update(net.predict(X))
+        pb.build_error_data().save_csv(args.output)
             
 if __name__ == '__main__':
     main()
