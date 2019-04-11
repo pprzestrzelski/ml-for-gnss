@@ -134,17 +134,20 @@ class PredictionDataBatch:
                 self.predicted_count += self.step
         else:
             # Ponieważ nie używamy już bazy trzeba odjąć jej rozmmiar od indeksu
-            id = self.idx - len(dat)
-            X = self.predicted[self.idx,self.idx+self.seq_len]
+            local_idx = self.idx - len(dat)
+            X = self.predicted[local_idx:local_idx+self.seq_len]
             self.idx += self.step
             self.predicted_count += self.step
-        return X.reshape(1,1,self.seq_len)
+        return np.asarray(X).reshape(1,1,self.seq_len)
 
     # Dodajemy wartości przewidziane z wyjścia sieci neuronowej
     def update(self, predictions):
         update_size = self.predicted_count > len(self.predicted)
-        if update_size > 0: 
-            self.predicted.append(predictions[-update_size])
+        if update_size > 0:
+            # Predictions jest maicerzą 3-wymiarową (keras tak ma) więc trzeba wydobyć
+            # interesujące nas dane TODO: Jak będziemy pracować na większych wsadach
+            # trzeba będzie tu poprawić.
+            self.predicted.append(predictions[0][0][-update_size])
 
     def build_error_data(self, concatenate_base=True):
         dat = None
