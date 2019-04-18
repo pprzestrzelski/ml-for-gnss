@@ -81,7 +81,9 @@ class ClockDataConverter:
                 else:
                     data = []
                 for epoch, clock_bias in data:
-                    csv_file.write("{}{}{}\n".format(epoch, self.csv_sep, float(clock_bias.bias) * scale))
+                    # TODO: omit naming convention; unify clock bias in RINEX and SP3 to bias or clock (or ...?)
+                    bias = clock_bias.bias if self.__data.file_standard == "RINEX" else clock_bias.clock
+                    csv_file.write("{}{}{}\n".format(epoch, self.csv_sep, float(bias) * scale))
 
     def csv_to_data(self):
         # clock_file = GnssClockData(dir_name="/home/pawel",
