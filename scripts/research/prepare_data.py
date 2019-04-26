@@ -76,9 +76,9 @@ def collect_igu_observed():
 
 def main():
     print("INFO: GNSS clock data will appear in the 'conversions' directory in the current work directory")
-    # collect_train_data()
-    # collect_reference_data()
-    # collect_igu_predicted()
+    collect_train_data()
+    collect_reference_data()
+    collect_igu_predicted()
     collect_igu_observed()
 
 
