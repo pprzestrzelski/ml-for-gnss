@@ -13,6 +13,7 @@ def collect_train_data():
 
     # Output to the CSV
     converter = ClockDataConverter(dir_name="train_data")
+    converter.set_sp3_data_type('Observed')
     converter.add_data(clock_data)
     converter.data_to_csv()
 
