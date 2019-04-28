@@ -2,7 +2,7 @@ from datetime import datetime
 
 
 def utc_to_gps_week_day(utc_time, utc_format):
-    gps_zero_epoch = datetime.strptime("1980-01-07 00:00:00", "%Y-%m-%d %H:%M:%S")
+    gps_zero_epoch = datetime.strptime("1980-01-06 00:00:00", "%Y-%m-%d %H:%M:%S")
     utc = datetime.strptime(utc_time, utc_format)
 
     diff = utc - gps_zero_epoch
