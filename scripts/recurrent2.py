@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 import numpy as np
 import argparse as ap
@@ -14,30 +15,37 @@ import sys
 # zegara oraz informacje umożliwiające odtworzenie pliku csv.
 class ErrorData:
 
-    def __init__(self, t0, dt, e0, scale, raw_data):
+    def __init__(self, t0, dt, e0, scaler, raw_data):
         self.t0 = t0  # Wartość czasu (epoch) dla pierwszego elementu ciągu
         self.dt = dt  # Różnica czasu pomiędzy odczytami
         self.e0 = e0  # Watość błędu dla pierwszego elementu (różnica błędu będzie zawsze zerowa)
-        self.scale = scale  # Prawdziwa różnica to wartość w sekwencji pomnożona przez skalę
+        self.scaler = scaler  # Obiek do normalizacji danych
         self.raw_data = raw_data  # Ciąg znormalizowanych różnic pomiędzy błędami odczytu
 
     @staticmethod
-    def load_csv(filename, scale=None):
+    def load_csv(filename, scaler=None):
         data = pd.read_csv(filename, sep=';')
         t0 = data['Epoch'][0]
         dt = data['Epoch'][1] - data['Epoch'][0]
         e0 = data['Clock_bias'][0]
         # Zmieniamy wartości błędów na różnice pomiędzy tymi wartościami, normalnie
         # pierwszy element ciągu będzie NaN więc musimy zmienić go na 0
-        raw_data = data['Clock_bias'].diff().fillna(0)
-        # Normalizacja, robimy to ręcznie zamiast scalerem dla większej kontroli
-        if scale is None:
-            scale = data['Clock_bias'].max() - data['Clock_bias'].min()
-        raw_data = raw_data.to_numpy() / scale
-        return ErrorData(t0, dt, e0, scale, raw_data)
+        raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()
+        # Normalizacja za pomocą StandardScalera, ręcznie były błędy
+        if scaler is None:
+            scaler = StandardScaler()
+            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
+            raw_data = scaler.fit_transform(raw_data)
+            raw_data.reshape(-1) # Wracamy do jednowymiarowości
+        else:
+            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
+            raw_data = scaler.transform(raw_data) # Tu używamy oruginalnej skali
+            raw_data.reshape(-1) # Wracamy do jednowymiarowości
+        return ErrorData(t0, dt, e0, scaler, raw_data)
 
     def save_csv(self, filename):
-        data = self.raw_data * self.scale  # Skalujemy z powrotem do oryginalnych wartości
+        # Skalujemy z powrotem do oryginalnych wartości
+        data = self.scaler.inverse_transform(self.raw_rata)
         data[0] = self.e0  # Ustawiamy wstępny błąd jako pierwszą wartość
         data = np.cumsum(data)  # Każda wartość będzie teraz sumą wszystkich poprzednich
         # Tworzymy tablicę z wartościami zaczynającymi się od zerowej epoki a następnie
@@ -51,7 +59,7 @@ class ErrorData:
 
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
 def visualise_error_data(ed):
-    plt.plot(ed.raw_data)
+    plt.plot(ed.raw_data[1:])
     plt.ylabel('Normalized error difference')
     plt.xlabel('Readout number')
     plt.show()
@@ -131,6 +139,8 @@ class PredictionDataBatch:
                 # TODO : Przyjmujemy śmiałe założenie że te dwie listy mają łącznie
                 # długość odpowiadająca oczekiwanej długości wejścia.
                 # To możeokazać się nieprawdziwe.
+                print('from_base={} from_prediction={}'.format(from_base.shape,
+                                                               from_prediction.shape))
                 X = np.hstack([from_base, from_prediction])
                 self.idx += self.step
                 self.predicted_count += self.step
