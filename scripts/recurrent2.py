@@ -1,10 +1,14 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 import numpy as np
 import argparse as ap
 import sys
+import logging 
 
+# Logger którego będziemy używać dla wszystkich wiadomości
+log = logging.getLogger('global_logger')
 
 # ===================================================================================================
 #                            Wczytywanie i wizualizacja danych z CSV
@@ -14,30 +18,39 @@ import sys
 # zegara oraz informacje umożliwiające odtworzenie pliku csv.
 class ErrorData:
 
-    def __init__(self, t0, dt, e0, scale, raw_data):
+    def __init__(self, t0, dt, e0, scaler, raw_data):
         self.t0 = t0  # Wartość czasu (epoch) dla pierwszego elementu ciągu
         self.dt = dt  # Różnica czasu pomiędzy odczytami
         self.e0 = e0  # Watość błędu dla pierwszego elementu (różnica błędu będzie zawsze zerowa)
-        self.scale = scale  # Prawdziwa różnica to wartość w sekwencji pomnożona przez skalę
+        self.scaler = scaler  # Obiek do normalizacji danych
         self.raw_data = raw_data  # Ciąg znormalizowanych różnic pomiędzy błędami odczytu
 
     @staticmethod
-    def load_csv(filename, scale=None):
+    def load_csv(filename, scaler=None):
         data = pd.read_csv(filename, sep=';')
         t0 = data['Epoch'][0]
         dt = data['Epoch'][1] - data['Epoch'][0]
         e0 = data['Clock_bias'][0]
         # Zmieniamy wartości błędów na różnice pomiędzy tymi wartościami, normalnie
         # pierwszy element ciągu będzie NaN więc musimy zmienić go na 0
-        raw_data = data['Clock_bias'].diff().fillna(0)
-        # Normalizacja, robimy to ręcznie zamiast scalerem dla większej kontroli
-        if scale is None:
-            scale = data['Clock_bias'].max() - data['Clock_bias'].min()
-        raw_data = raw_data.to_numpy() / scale
-        return ErrorData(t0, dt, e0, scale, raw_data)
+        raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()
+        # Normalizacja za pomocą StandardScalera, ręcznie były błędy
+        if scaler is None:
+            scaler = StandardScaler()
+            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
+            raw_data = scaler.fit_transform(raw_data)
+            raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
+            log.debug('Size = {}'.format(raw_data.shape))
+        else:
+            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
+            raw_data = scaler.transform(raw_data) # Tu używamy oruginalnej skali
+            raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
+            log.debug('Size = {}'.format(raw_data.shape))
+        return ErrorData(t0, dt, e0, scaler, raw_data)
 
     def save_csv(self, filename):
-        data = self.raw_data * self.scale  # Skalujemy z powrotem do oryginalnych wartości
+        # Skalujemy z powrotem do oryginalnych wartości
+        data = self.scaler.inverse_transform(self.raw_data)
         data[0] = self.e0  # Ustawiamy wstępny błąd jako pierwszą wartość
         data = np.cumsum(data)  # Każda wartość będzie teraz sumą wszystkich poprzednich
         # Tworzymy tablicę z wartościami zaczynającymi się od zerowej epoki a następnie
@@ -51,7 +64,7 @@ class ErrorData:
 
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
 def visualise_error_data(ed):
-    plt.plot(ed.raw_data)
+    plt.plot(ed.raw_data[1:])
     plt.ylabel('Normalized error difference')
     plt.xlabel('Readout number')
     plt.show()
@@ -114,7 +127,9 @@ class PredictionDataBatch:
 
     # Ta funkcja faktycznie ogarnia iterowanie
     def __next__(self):
+        #log.debug('Krok iteracji predyktora')
         if self.predicted_count >= self.prediction_depth:
+            log.debug('Osiągnięto zamierzoną głębokość predykcji')
             raise StopIteration
         dat = self.base.raw_data  # Dla lepszej czytelności
         X = None
@@ -131,6 +146,8 @@ class PredictionDataBatch:
                 # TODO : Przyjmujemy śmiałe założenie że te dwie listy mają łącznie
                 # długość odpowiadająca oczekiwanej długości wejścia.
                 # To możeokazać się nieprawdziwe.
+                log.debug('from_base={} from_prediction={}'.format(from_base.shape,
+                                                                   from_prediction.shape))
                 X = np.hstack([from_base, from_prediction])
                 self.idx += self.step
                 self.predicted_count += self.step
@@ -163,7 +180,7 @@ class PredictionDataBatch:
             # tak żeby pokrywały się z stanem na końcu bazy
             t0 += self.base.dt * len(self.base.raw_data)
             e0 += (self.base.raw_data*self.base.scale).sum()
-        return ErrorData(t0, self.base.dt, e0, self.base.scale, dat)
+        return ErrorData(t0, self.base.dt, e0, self.base.scaler, dat)
 
 
 # ===================================================================================================
@@ -257,7 +274,7 @@ def prepare_argparser():
 # Główna funkcja skryptu
 def main():
     args = prepare_argparser().parse_args()
-
+    logging.basicConfig(level=logging.DEBUG)
     ed = ErrorData.load_csv(args.input)
     visualise_error_data(ed)
     cfg = load_config(args.config)
