@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, Normalizer, normalize
 import tensorflow as tf
 import numpy as np
 import argparse as ap
@@ -33,15 +33,24 @@ class ErrorData:
         e0 = data['Clock_bias'][0]
         # Zmieniamy wartości błędów na różnice pomiędzy tymi wartościami, normalnie
         # pierwszy element ciągu będzie NaN więc musimy zmienić go na 0
-        raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()
+        raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()[1:]
         # Normalizacja za pomocą StandardScalera, ręcznie były błędy
         if scaler is None:
-            scaler = StandardScaler()
-            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
-            raw_data = scaler.fit_transform(raw_data)
-            raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
-            log.debug('Size = {}'.format(raw_data.shape))
+            log.debug('Scaler fits to data given')
+            scaler = Normalizer(norm='l2')
+            visualise_error_data_raw(raw_data)
+            #raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
+            log.debug('mean = {}'.format(raw_data.mean()))
+            raw_data -= raw_data.mean()
+            visualise_error_data_raw(raw_data)
+            log.debug('scale = {}'.format(max(raw_data.max(), abs(raw_data.min()))))
+            raw_data /= max(raw_data.max(), abs(raw_data.min()))
+            #raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
+            visualise_error_data_raw(raw_data)
+            sys.exit()
+            log.debug('Scaler params : {}'.format(scaler.get_params()))
         else:
+            log.debug('Scaler is already fitted')
             raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
             raw_data = scaler.transform(raw_data) # Tu używamy oruginalnej skali
             raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
@@ -65,6 +74,12 @@ class ErrorData:
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
 def visualise_error_data(ed):
     plt.plot(ed.raw_data[1:])
+    plt.ylabel('Normalized error difference')
+    plt.xlabel('Readout number')
+    plt.show()
+
+def visualise_error_data_raw(raw_data):
+    plt.plot(raw_data)
     plt.ylabel('Normalized error difference')
     plt.xlabel('Readout number')
     plt.show()
