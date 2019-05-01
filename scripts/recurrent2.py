@@ -6,6 +6,7 @@ import numpy as np
 import argparse as ap
 import sys
 import logging 
+from contextlib import suppress
 
 # Logger którego będziemy używać dla wszystkich wiadomości
 log = logging.getLogger('global_logger')
@@ -47,7 +48,6 @@ class ErrorData:
             raw_data /= max(raw_data.max(), abs(raw_data.min()))
             #raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
             visualise_error_data_raw(raw_data)
-            sys.exit()
             log.debug('Scaler params : {}'.format(scaler.get_params()))
         else:
             log.debug('Scaler is already fitted')
@@ -60,7 +60,7 @@ class ErrorData:
     def save_csv(self, filename):
         # Skalujemy z powrotem do oryginalnych wartości
         data = self.scaler.inverse_transform(self.raw_data)
-        data[0] = self.e0  # Ustawiamy wstępny błąd jako pierwszą wartość
+        data.insert(0, self.e0)  # Ustawiamy wstępny błąd jako pierwszą wartość
         data = np.cumsum(data)  # Każda wartość będzie teraz sumą wszystkich poprzednich
         # Tworzymy tablicę z wartościami zaczynającymi się od zerowej epoki a następnie
         # inkrementowanymi o wartość przyrostu czasu. Tablica będzie miała taki sam
@@ -73,7 +73,7 @@ class ErrorData:
 
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
 def visualise_error_data(ed):
-    plt.plot(ed.raw_data[1:])
+    plt.plot(ed.raw_data)
     plt.ylabel('Normalized error difference')
     plt.xlabel('Readout number')
     plt.show()
@@ -97,7 +97,7 @@ class TrainingDataBatch:
         self.seq_len = seq_len  # Długość sekwencji podawanej na wejście sieci
         self.step = step  # O ile elementów przesówamy sekwencje pomiędzy cyklami sieci
         self.batch_size = batch_size  # Ile cylki uczący zostanie wykożystanych w jednym pokoleniu
-        self.idx = 1  # Obecna pozycja w ciągu, pomijamy element zerowy poniewaz będzie zakłócać uczenie
+        self.idx = 0  # Obecna pozycja w ciągu
 
     # Ta funkcja jest używana przez kerasa i zawsze musi zwracać parę tablic numpy,
     # wejścia i wyjścia sieci
@@ -241,6 +241,16 @@ class NeuralNetwork:
 #                                    Wczytywanie konfiguracji
 # ===================================================================================================
 
+# Staramy się przekonwetować napis do jak najbardziej restrykcyjnego typu czyli po kolei
+# int, float, string
+def parse_config_value(string):
+    # Ignorujemy wyjątki typu ValueError
+    with suppress(ValueError):
+        return int(string)
+        return float(value)
+        return string
+
+
 # Funkcja wczytująca proste pliki konfiguracyjne w styly ".properties"
 def load_config(filename):
     cfg = {}
@@ -250,19 +260,19 @@ def load_config(filename):
                 if line[0] == '#':
                     continue
                 key, value = line.split('=')
-                try:
-                    value = int(value)
-                except:
-                    try:
-                        value = float(value)
-                    except:
-                        pass
+                value = parse_config_value(value)
                 cfg[key] = value
     except Exception as e:
         print('Error occured when loading configuration file.')
         print(e)
     return cfg
 
+# Wypisuje konfigurację
+def print_config(cfg):
+    log.info('Configuration : ')
+    for k, v in cfg.items():
+        log.info('{}:{} ({})'.format(k, v, type(v).__name__))
+    
 
 # Funkcja przygotowuje parser dla linii poleceń
 def prepare_argparser():
@@ -293,6 +303,7 @@ def main():
     ed = ErrorData.load_csv(args.input)
     visualise_error_data(ed)
     cfg = load_config(args.config)
+    print_config(cfg)
     net = NeuralNetwork.build_lstm(cfg['sequence_size'], cfg['batch_size'], cfg['hidden_size'], args.weights)
     if args.train:
         tb = TrainingDataBatch(ed, cfg['sequence_size'], cfg['step'], cfg['batch_size'])
