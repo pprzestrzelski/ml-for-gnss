@@ -19,15 +19,15 @@ log = logging.getLogger('global_logger')
 # zegara oraz informacje umożliwiające odtworzenie pliku csv.
 class ErrorData:
 
-    def __init__(self, t0, dt, e0, scaler, raw_data):
+    def __init__(self, t0, dt, e0, mean, scale, raw_data):
         self.t0 = t0  # Wartość czasu (epoch) dla pierwszego elementu ciągu
         self.dt = dt  # Różnica czasu pomiędzy odczytami
         self.e0 = e0  # Watość błędu dla pierwszego elementu (różnica błędu będzie zawsze zerowa)
-        self.scaler = scaler  # Obiek do normalizacji danych
+        self.scale = scale  # Obiek do normalizacji danych
         self.raw_data = raw_data  # Ciąg znormalizowanych różnic pomiędzy błędami odczytu
 
     @staticmethod
-    def load_csv(filename, scaler=None):
+    def load_csv(filename, mean=None, scale=None):
         data = pd.read_csv(filename, sep=';')
         t0 = data['Epoch'][0]
         dt = data['Epoch'][1] - data['Epoch'][0]
@@ -36,36 +36,26 @@ class ErrorData:
         # pierwszy element ciągu będzie NaN więc musimy zmienić go na 0
         raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()[1:]
         # Normalizacja za pomocą StandardScalera, ręcznie były błędy
-        if scaler is None:
-            log.debug('Scaler fits to data given')
-            scaler = Normalizer(norm='l2')
-            visualise_error_data_raw(raw_data)
-            #raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
-            log.debug('mean = {}'.format(raw_data.mean()))
-            raw_data -= raw_data.mean()
-            visualise_error_data_raw(raw_data)
-            log.debug('scale = {}'.format(max(raw_data.max(), abs(raw_data.min()))))
-            raw_data /= max(raw_data.max(), abs(raw_data.min()))
-            #raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
-            visualise_error_data_raw(raw_data)
-            log.debug('Scaler params : {}'.format(scaler.get_params()))
-        else:
-            log.debug('Scaler is already fitted')
-            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
-            raw_data = scaler.transform(raw_data) # Tu używamy oruginalnej skali
-            raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
-            log.debug('Size = {}'.format(raw_data.shape))
-        return ErrorData(t0, dt, e0, scaler, raw_data)
+        if mean is None: mean = raw_data.mean()
+        raw_data -= mean
+        if scale is None: scale = max(raw_data.max(), abs(raw_data.min()))
+        raw_data /= scale
+        return ErrorData(t0, dt, e0, mean, scale, raw_data)
 
     def save_csv(self, filename):
         # Skalujemy z powrotem do oryginalnych wartości
-        data = self.scaler.inverse_transform(self.raw_data)
+        data = self.raw_data * self.scale + self.mean
         data.insert(0, self.e0)  # Ustawiamy wstępny błąd jako pierwszą wartość
         data = np.cumsum(data)  # Każda wartość będzie teraz sumą wszystkich poprzednich
         # Tworzymy tablicę z wartościami zaczynającymi się od zerowej epoki a następnie
         # inkrementowanymi o wartość przyrostu czasu. Tablica będzie miała taki sam
         # rozmiar jak data
-        epochs = np.arange(self.t0, self.t0+self.dt*data.shape[0], self.dt)
+        epochs = [t0]
+        # TODO : To jest napisane paskudnie, niepythonowo oraz niewydajnie.
+        # ale na szybko.
+        for _ in range(len(data)-1):
+            epochs.append(epochs[-1]+dt)
+        epochs = np.array(epochs)
         d_frame = {'Epoch': epochs, 'Clock_bias': data}
         df = pd.DataFrame(d_frame, columns=['Epoch', 'Clock_bias'])
         df.to_csv(filename, index=False, sep=';')  # Zapisz do pliku csv bez numerowania wierszy
@@ -226,7 +216,9 @@ class NeuralNetwork:
 
     # Uczenie sieci
     def fit(self, data_batch, steps_per_epoch, epochs, weight_folder='checkpoints'):
-        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/model-{epoch:02d}.hdf5', verbose=1)
+        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/weights.hdf5',
+                                                          save_best_only=True,
+                                                          verbose=1)
         self.model.fit_generator(data_batch.generate(),
                                  steps_per_epoch=steps_per_epoch,
                                  epochs=epochs,
