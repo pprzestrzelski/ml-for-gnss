@@ -1,11 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, Normalizer, normalize
 import tensorflow as tf
 import numpy as np
 import argparse as ap
 import sys
 import logging 
+from contextlib import suppress
 
 # Logger którego będziemy używać dla wszystkich wiadomości
 log = logging.getLogger('global_logger')
@@ -18,45 +19,43 @@ log = logging.getLogger('global_logger')
 # zegara oraz informacje umożliwiające odtworzenie pliku csv.
 class ErrorData:
 
-    def __init__(self, t0, dt, e0, scaler, raw_data):
+    def __init__(self, t0, dt, e0, mean, scale, raw_data):
         self.t0 = t0  # Wartość czasu (epoch) dla pierwszego elementu ciągu
         self.dt = dt  # Różnica czasu pomiędzy odczytami
         self.e0 = e0  # Watość błędu dla pierwszego elementu (różnica błędu będzie zawsze zerowa)
-        self.scaler = scaler  # Obiek do normalizacji danych
+        self.scale = scale  # Obiek do normalizacji danych
         self.raw_data = raw_data  # Ciąg znormalizowanych różnic pomiędzy błędami odczytu
 
     @staticmethod
-    def load_csv(filename, scaler=None):
+    def load_csv(filename, mean=None, scale=None):
         data = pd.read_csv(filename, sep=';')
         t0 = data['Epoch'][0]
         dt = data['Epoch'][1] - data['Epoch'][0]
         e0 = data['Clock_bias'][0]
         # Zmieniamy wartości błędów na różnice pomiędzy tymi wartościami, normalnie
         # pierwszy element ciągu będzie NaN więc musimy zmienić go na 0
-        raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()
+        raw_data = data['Clock_bias'].diff().fillna(0).to_numpy()[1:]
         # Normalizacja za pomocą StandardScalera, ręcznie były błędy
-        if scaler is None:
-            scaler = StandardScaler()
-            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
-            raw_data = scaler.fit_transform(raw_data)
-            raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
-            log.debug('Size = {}'.format(raw_data.shape))
-        else:
-            raw_data = raw_data.reshape(-1,1) # To musi być dwuwymiarowe
-            raw_data = scaler.transform(raw_data) # Tu używamy oruginalnej skali
-            raw_data = raw_data.flatten() # Wracamy do jednowymiarowości
-            log.debug('Size = {}'.format(raw_data.shape))
-        return ErrorData(t0, dt, e0, scaler, raw_data)
+        if mean is None: mean = raw_data.mean()
+        raw_data -= mean
+        if scale is None: scale = max(raw_data.max(), abs(raw_data.min()))
+        raw_data /= scale
+        return ErrorData(t0, dt, e0, mean, scale, raw_data)
 
     def save_csv(self, filename):
         # Skalujemy z powrotem do oryginalnych wartości
-        data = self.scaler.inverse_transform(self.raw_data)
-        data[0] = self.e0  # Ustawiamy wstępny błąd jako pierwszą wartość
+        data = self.raw_data * self.scale + self.mean
+        data.insert(0, self.e0)  # Ustawiamy wstępny błąd jako pierwszą wartość
         data = np.cumsum(data)  # Każda wartość będzie teraz sumą wszystkich poprzednich
         # Tworzymy tablicę z wartościami zaczynającymi się od zerowej epoki a następnie
         # inkrementowanymi o wartość przyrostu czasu. Tablica będzie miała taki sam
         # rozmiar jak data
-        epochs = np.arange(self.t0, self.t0+self.dt*data.shape[0], self.dt)
+        epochs = [t0]
+        # TODO : To jest napisane paskudnie, niepythonowo oraz niewydajnie.
+        # ale na szybko.
+        for _ in range(len(data)-1):
+            epochs.append(epochs[-1]+dt)
+        epochs = np.array(epochs)
         d_frame = {'Epoch': epochs, 'Clock_bias': data}
         df = pd.DataFrame(d_frame, columns=['Epoch', 'Clock_bias'])
         df.to_csv(filename, index=False, sep=';')  # Zapisz do pliku csv bez numerowania wierszy
@@ -64,7 +63,13 @@ class ErrorData:
 
 # Wizualizacja różnic pomiędzy błędami za pomoca pyplot
 def visualise_error_data(ed):
-    plt.plot(ed.raw_data[1:])
+    plt.plot(ed.raw_data)
+    plt.ylabel('Normalized error difference')
+    plt.xlabel('Readout number')
+    plt.show()
+
+def visualise_error_data_raw(raw_data):
+    plt.plot(raw_data)
     plt.ylabel('Normalized error difference')
     plt.xlabel('Readout number')
     plt.show()
@@ -82,7 +87,7 @@ class TrainingDataBatch:
         self.seq_len = seq_len  # Długość sekwencji podawanej na wejście sieci
         self.step = step  # O ile elementów przesówamy sekwencje pomiędzy cyklami sieci
         self.batch_size = batch_size  # Ile cylki uczący zostanie wykożystanych w jednym pokoleniu
-        self.idx = 1  # Obecna pozycja w ciągu, pomijamy element zerowy poniewaz będzie zakłócać uczenie
+        self.idx = 0  # Obecna pozycja w ciągu
 
     # Ta funkcja jest używana przez kerasa i zawsze musi zwracać parę tablic numpy,
     # wejścia i wyjścia sieci
@@ -211,7 +216,8 @@ class NeuralNetwork:
 
     # Uczenie sieci
     def fit(self, data_batch, steps_per_epoch, epochs, weight_folder='checkpoints'):
-        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/model-{epoch:02d}.hdf5', verbose=1)
+        checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/weights.hdf5',
+                                                          verbose=1)
         self.model.fit_generator(data_batch.generate(),
                                  steps_per_epoch=steps_per_epoch,
                                  epochs=epochs,
@@ -226,6 +232,16 @@ class NeuralNetwork:
 #                                    Wczytywanie konfiguracji
 # ===================================================================================================
 
+# Staramy się przekonwetować napis do jak najbardziej restrykcyjnego typu czyli po kolei
+# int, float, string
+def parse_config_value(string):
+    # Ignorujemy wyjątki typu ValueError
+    with suppress(ValueError):
+        return int(string)
+        return float(value)
+        return string
+
+
 # Funkcja wczytująca proste pliki konfiguracyjne w styly ".properties"
 def load_config(filename):
     cfg = {}
@@ -235,19 +251,19 @@ def load_config(filename):
                 if line[0] == '#':
                     continue
                 key, value = line.split('=')
-                try:
-                    value = int(value)
-                except:
-                    try:
-                        value = float(value)
-                    except:
-                        pass
+                value = parse_config_value(value)
                 cfg[key] = value
     except Exception as e:
         print('Error occured when loading configuration file.')
         print(e)
     return cfg
 
+# Wypisuje konfigurację
+def print_config(cfg):
+    log.info('Configuration : ')
+    for k, v in cfg.items():
+        log.info('{}:{} ({})'.format(k, v, type(v).__name__))
+    
 
 # Funkcja przygotowuje parser dla linii poleceń
 def prepare_argparser():
@@ -278,6 +294,7 @@ def main():
     ed = ErrorData.load_csv(args.input)
     visualise_error_data(ed)
     cfg = load_config(args.config)
+    print_config(cfg)
     net = NeuralNetwork.build_lstm(cfg['sequence_size'], cfg['batch_size'], cfg['hidden_size'], args.weights)
     if args.train:
         tb = TrainingDataBatch(ed, cfg['sequence_size'], cfg['step'], cfg['batch_size'])
