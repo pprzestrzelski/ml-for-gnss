@@ -217,7 +217,6 @@ class NeuralNetwork:
     # Uczenie sieci
     def fit(self, data_batch, steps_per_epoch, epochs, weight_folder='checkpoints'):
         checkpointer = tf.keras.callbacks.ModelCheckpoint(filepath=weight_folder + '/weights.hdf5',
-                                                          save_best_only=True,
                                                           verbose=1)
         self.model.fit_generator(data_batch.generate(),
                                  steps_per_epoch=steps_per_epoch,
