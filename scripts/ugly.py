@@ -5,6 +5,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from math import floor
 from keras.wrappers.scikit_learn import KerasClassifier
+from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import GridSearchCV
 
 
@@ -154,7 +155,10 @@ def teach_and_evaluate():
     batch_size = int(input('Rozmiar wsadu (batch) > '))
     optimizer = input('Optymalizator > ')
     nn = create_network(optimizer, batch_size)
-    nn.fit(X_tr, Y_tr, epochs=epochs, batch_size=batch_size, validation_data=(X_tst, Y_tst))
+    save_best = ModelCheckpoint('best.hdf5', save_best_only=True, monitor='val_loss', mode='min',
+                                verbose=1)
+    nn.fit(X_tr, Y_tr, epochs=epochs, batch_size=batch_size, validation_data=(X_tst, Y_tst),
+           callbacks=[save_best])
     
 # Opcje do wyboru z menu
 option_menu = [find_best_parameters, teach_and_evaluate]
