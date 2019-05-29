@@ -1,6 +1,26 @@
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import rcParams
+rcParams['font.size'] = 10
+
+
+class Scaler:
+    def __init__(self):
+        self.mean = 0.0
+        self.scale = 1.0
+
+    def do_scale(self, data):
+        self.mean = np.mean(data)
+        data -= self.mean
+        self.scale = max(max(data), abs(min(data)))
+        data /= self.scale
+        return data
+
+    def inverse_transform(self, data):
+        data *= self.scale
+        data += self.mean
+        return data
 
 
 # create a differenced series
@@ -16,7 +36,7 @@ def inv_diff(last_obs, value):
     return value + last_obs
 
 
-# scale train and test data to [-1, 1]
+# scale to [-1, 1]
 def scale(train):
     # fit scaler
     scaler = MinMaxScaler(feature_range=(-1, 1))
@@ -25,15 +45,6 @@ def scale(train):
     # transform train
     train_scaled = scaler.transform(train)
     return scaler, train_scaled
-
-
-# inverse scaling for a forecasted value
-def inv_scale(scaler, X, value):
-    new_row = [x for x in X] + [value]
-    array = np.array(new_row)
-    array = array.reshape(1, len(array))
-    inverted = scaler.inverse_transform(array)
-    return inverted[0, -1]
 
 
 def create_lstm_dataset(dataset, look_back=1):
@@ -62,6 +73,87 @@ def plot_lstm_loss(history):
     plt.figure()
     plt.plot(epochs, loss, 'b', label='Strata trenowania')
     plt.plot(epochs, val_loss, 'r', label='Strata walidacji')
-    plt.title('Strata trenowania i walidacji')
+    plt.xlabel('Epoka')
+    plt.ylabel('Wartość straty')
+    plt.legend()
+
+    plt.xlim([0, len(loss)])
+    plt.xticks(np.arange(0, len(loss), 10))
+
+    plt.show()
+
+
+def plot_raw_data(data):
+    plt.plot(data, 'k')
+    epochs = len(data)
+    print("Plot GNSS clock data")
+    plt.xlabel('Epoka')
+    plt.ylabel('Opóźnienie [ns]')
+    plt.xticks(np.arange(0, epochs, 192))
+    plt.yticks(np.arange(-6000, -3000, 200))
+    plt.xlim([0, epochs])
+    plt.ylim([-5400, -4200])
+
+    plt.show()
+
+
+def plot_differences(data):
+    plt.plot(data, 'k')
+    epochs = len(data)
+    print("Plot differences")
+    print("Max diff:", max(data))
+    print("Min diff:", min(data))
+    plt.xlabel('Epoka')
+    plt.ylabel('Różnica opóźnień [ns]')
+    plt.xticks(np.arange(0, epochs, 192))
+    plt.yticks(np.arange(-3, 3.01, 0.5))
+    plt.xlim([0, epochs])
+    plt.ylim([-3, 3])
+
+    plt.show()
+
+
+def plot_scaled_values(data):
+    print("Plot scaled data")
+    print("Max scaled:", max(data))
+    print("Min scaled:", min(data))
+    print("Mean value:", np.mean(data))
+    print("Std dev:", np.std(data))
+    plt.plot(data, 'k')
+    epochs = len(data)
+    plt.xlabel('Epoka')
+    plt.ylabel('Wartość znormalizowana')
+    plt.xticks(np.arange(0, epochs, 192))
+    plt.yticks(np.arange(-3, 3.01, 0.5))
+    plt.xlim([0, epochs])
+    plt.ylim([-3, 3])
+
+    plt.show()
+
+
+def plot_prediction(ref_biases, predicted_biases, igu_pred_biases):
+    plt.plot(predicted_biases, 'r-.', label='LSTM')
+    plt.plot(igu_pred_biases, 'k--', label='IGU-P')
+    plt.plot(ref_biases, 'b', label='referencyjne opóźnienia')
+    plt.xlim([0, 96])
+    plt.ylabel('[ns]')
+    plt.xlabel('Epoka')
+    plt.yticks(np.arange(-4300, -4200, 10))
+    plt.xticks(np.arange(0, 96, 8))
+    plt.ylim([-4270, -4210])
+    plt.xlim([0, 96])
+    plt.legend()
+    plt.show()
+
+
+def plot_prediction_error(lstm, igu_p):
+    plt.plot(lstm, 'r', label='LSTM')
+    plt.plot(igu_p, 'b', label='IGU-P')
+    plt.ylabel('[ns]')
+    plt.xlabel('Epoka')
+    plt.yticks(np.arange(0, 3, 0.5))
+    plt.xticks(np.arange(0, 96, 8))
+    plt.ylim([0, 3])
+    plt.xlim([0, 96])
     plt.legend()
     plt.show()

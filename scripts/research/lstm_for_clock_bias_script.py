@@ -2,9 +2,9 @@ from pandas import read_csv
 import numpy as np
 from math import floor, sqrt, fabs
 import tensorflow as tf
-from scripts.research.lstm_utils import diff, inv_diff, scale, inv_scale, create_lstm_dataset, plot_lstm_loss
+from scripts.research.lstm_utils import diff, scale, create_lstm_dataset, \
+    plot_lstm_loss, plot_raw_data, plot_differences, plot_scaled_values, plot_prediction, plot_prediction_error, Scaler
 from keras import regularizers
-from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
@@ -80,35 +80,31 @@ def predict_with_lstm(model, scaled_data, window_size, depth):
 
 series = read_csv(train_file_name, sep=';', header=0, parse_dates=[0], index_col=0, squeeze=True)
 raw_series = series.values
-plt.plot(raw_series)
-plt.title("Opóźnienia chodu zegara satelity")
-plt.show()
-
+plot_raw_data(raw_series)
 
 # # Let's make data stationary!
 diff_values = diff(raw_series)
-# plt.plot(diff_values)
-# plt.title("Różnice opóźnień chodu zegara")
-# plt.show()
+plot_differences(diff_values)
 
 # # Normalize input data
-scaler, scaled_diff_values = scale(np.array(diff_values))
-# plt.plot(scaled_diff_values)
-# plt.title("Znormalizowane różnice opóźnień")
-# plt.show()
+# 1. Scale using MinMaxScaler
+# scaler, scaled_diff_values = scale(np.array(diff_values))
+# 2. or scale with mean and max absolute error (seems to be better)
+scaler = Scaler()
+scaled_diff_values = scaler.do_scale(diff_values)
+plot_scaled_values(scaled_diff_values)
 
-print(scaled_diff_values)
+# # Create LSTM data sets: X and Y
+scaled_diff_values = np.array(scaled_diff_values)
+scaled_diff_values = scaled_diff_values.reshape(scaled_diff_values.shape[0], 1)
 X, Y = create_lstm_dataset(scaled_diff_values, look_back)
 
 # # Split data to the train and valuation datasets
 tr_count = floor(len(X) * TRAIN_DATA_COEFF)
-
 X_tr = X[:tr_count, :]
 Y_tr = Y[:tr_count]
 X_val = X[tr_count:, :]
 Y_val = Y[tr_count:]
-print("Train data size:", len(Y_tr))
-print("Validation data size:", len(Y_val))
 
 # Reshape required for LSTM layers
 X_tr = X_tr.reshape(X_tr.shape[0], 1, X_tr.shape[1])
@@ -120,15 +116,14 @@ history = nn.fit(X_tr, Y_tr, epochs=epochs, batch_size=batch_size,
 
 plot_lstm_loss(history)
 
-# Predict
+# # Predict
 predicted = predict_with_lstm(nn, scaled_diff_values, window, prediction_depth)
 predicted = np.array(predicted).reshape(len(predicted), 1)
 
-# re-scale
+# # Reverse scale process
 predicted = scaler.inverse_transform(predicted)
 
-# https://machinelearningmastery.com/remove-trends-seasonality-difference-transform-python/
-# invert differentiation
+# # Invert differentiation
 predicted_biases = []
 raw = list(raw_series)
 for j in range(len(predicted)):
@@ -136,21 +131,18 @@ for j in range(len(predicted)):
     predicted_biases.append(val)
     raw.append(val)
 
+# # Summary, comparison, plots
 ref_biases = read_csv(ref_file_name, sep=';', header=0, parse_dates=[0], index_col=0, squeeze=True).values
 igu_pred_biases = read_csv(igu_pred_file_name, sep=';', header=0, parse_dates=[0], index_col=0, squeeze=True).values
 
-plt.plot(predicted_biases, 'r-.', label='Predykcja LSTM')
-plt.plot(igu_pred_biases, 'k--', label='Predykcja IGU-P')
-plt.plot(ref_biases, 'b', label='Referencyjne opóźnienia')
-plt.title('Wynik predykcji opóźnień chodu zegara satelity')
-plt.legend()
-plt.show()
+plot_prediction(ref_biases, predicted_biases, igu_pred_biases)
 
 lstm_mae = mean_absolute_error(ref_biases, predicted_biases)
 lstm_mse = mean_squared_error(ref_biases, predicted_biases)
 igu_p_mae = mean_absolute_error(ref_biases, igu_pred_biases)
 igu_p_mse = mean_squared_error(ref_biases, igu_pred_biases)
 
+print()
 print("LSTM prediction:  MAE = {:.4f} MSE = {:.4f} RMS = {:.4f}".format(lstm_mae, lstm_mse, sqrt(lstm_mse)))
 print("IGU-P prediction: MAE = {:.4f} MSE = {:.4f} RMS = {:.4f}".format(igu_p_mae, igu_p_mse, sqrt(igu_p_mse)))
 
@@ -160,8 +152,4 @@ for k in range(len(ref_biases)):
     lstm_abs_error.append(fabs(predicted_biases[k] - ref_biases[k]))
     igu_p_abs_error.append(fabs(igu_pred_biases[k] - ref_biases[k]))
 
-plt.plot(lstm_abs_error, 'r', label='LSTM')
-plt.plot(igu_p_abs_error, 'b', label='IGU-P')
-plt.title('Bezwględna wartość błędu predykcji')
-plt.legend()
-plt.show()
+plot_prediction_error(lstm_abs_error, igu_p_abs_error)
