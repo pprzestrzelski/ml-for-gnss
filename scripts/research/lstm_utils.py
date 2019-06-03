@@ -66,7 +66,7 @@ def generate_lstm_datasets(dataset, look_back=1):
     return np.array(data_x), np.array(data_y)
 
 
-def plot_lstm_loss(history):
+def plot_lstm_loss(history, print_plot=False):
     loss = history.history['loss']
     val_loss = history.history['val_loss']
     epochs = range(len(loss))
@@ -80,10 +80,12 @@ def plot_lstm_loss(history):
     plt.xlim([0, len(loss)])
     plt.xticks(np.arange(0, len(loss), 10))
 
+    if print_plot:
+        plt.savefig("__loss.png", bbox_inches='tight')
     plt.show()
 
 
-def plot_raw_data(data):
+def plot_raw_data(data, print_plot=False):
     plt.plot(data, 'k')
     epochs = len(data)
     print("Plot GNSS clock data")
@@ -94,10 +96,12 @@ def plot_raw_data(data):
     plt.xlim([0, epochs])
     plt.ylim([-5400, -4200])
 
+    if print_plot:
+        plt.savefig("__raw.png", bbox_inches='tight')
     plt.show()
 
 
-def plot_differences(data):
+def plot_differences(data, print_plot=False):
     plt.plot(data, 'k')
     epochs = len(data)
     print("Plot differences")
@@ -110,10 +114,12 @@ def plot_differences(data):
     plt.xlim([0, epochs])
     plt.ylim([-3, 3])
 
+    if print_plot:
+        plt.savefig("__diff.png", bbox_inches='tight')
     plt.show()
 
 
-def plot_scaled_values(data):
+def plot_scaled_values(data, print_plot=False):
     print("Plot scaled data")
     print("Max scaled:", max(data))
     print("Min scaled:", min(data))
@@ -122,16 +128,18 @@ def plot_scaled_values(data):
     plt.plot(data, 'k')
     epochs = len(data)
     plt.xlabel('Epoka')
-    plt.ylabel('Wartość znormalizowana')
+    plt.ylabel('Opóźnienie znormalizowane')
     plt.xticks(np.arange(0, epochs, 192))
     plt.yticks(np.arange(-3, 3.01, 0.5))
     plt.xlim([0, epochs])
     plt.ylim([-3, 3])
 
+    if print_plot:
+        plt.savefig("__norm_diff.png", bbox_inches='tight')
     plt.show()
 
 
-def plot_prediction(ref_biases, predicted_biases, igu_pred_biases):
+def plot_prediction(ref_biases, predicted_biases, igu_pred_biases, print_plot=False):
     plt.plot(predicted_biases, 'r-.', label='LSTM')
     plt.plot(igu_pred_biases, 'k--', label='IGU-P')
     plt.plot(ref_biases, 'b', label='referencyjne opóźnienia')
@@ -139,21 +147,27 @@ def plot_prediction(ref_biases, predicted_biases, igu_pred_biases):
     plt.ylabel('[ns]')
     plt.xlabel('Epoka')
     plt.yticks(np.arange(-4300, -4200, 10))
-    plt.xticks(np.arange(0, 96, 8))
+    plt.xticks(np.arange(0, 97, 8))
     plt.ylim([-4270, -4210])
     plt.xlim([0, 96])
     plt.legend()
+
+    if print_plot:
+        plt.savefig("__pred.png", bbox_inches='tight')
     plt.show()
 
 
-def plot_prediction_error(lstm, igu_p):
+def plot_prediction_error(lstm, igu_p, print_plot=False):
     plt.plot(lstm, 'r', label='LSTM')
     plt.plot(igu_p, 'b', label='IGU-P')
     plt.ylabel('[ns]')
     plt.xlabel('Epoka')
-    plt.yticks(np.arange(0, 3, 0.5))
-    plt.xticks(np.arange(0, 96, 8))
+    plt.yticks(np.arange(0, 3.01, 0.5))
+    plt.xticks(np.arange(0, 97, 8))
     plt.ylim([0, 3])
     plt.xlim([0, 96])
     plt.legend()
+
+    if print_plot:
+        plt.savefig("__pred_error.png", bbox_inches='tight')
     plt.show()
