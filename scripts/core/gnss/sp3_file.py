@@ -1,5 +1,5 @@
-from core.utils.gnss_time import utc_to_gps_week_day
-from core.gnss.gnss_date import GnssDate
+from scripts.core.utils.gnss_time import utc_to_gps_week_day
+from scripts.core.gnss.gnss_date import GnssDate
 
 
 class Sp3File:

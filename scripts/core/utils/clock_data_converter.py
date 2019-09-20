@@ -1,5 +1,5 @@
-from core.gnss.gnss_clock_data import GnssClockData
-from core.utils.gnss_global_consts import GPS_SATS
+from scripts.core.gnss.gnss_clock_data import GnssClockData
+from scripts.core.utils.gnss_global_consts import GPS_SATS
 import time
 import os
 

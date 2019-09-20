@@ -1,7 +1,7 @@
 import os
 from sortedcontainers import SortedDict
-from core.gnss.rinex_clock_file import RinexClockFile
-from core.gnss.sp3_file import Sp3File
+from scripts.core.gnss.rinex_clock_file import RinexClockFile
+from scripts.core.gnss.sp3_file import Sp3File
 
 
 class GnssClockData:
