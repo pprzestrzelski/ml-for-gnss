@@ -1,4 +1,6 @@
 import os
+import logging
+import tensorflow as tf
 from scripts.core.ml.Estimator import Estimator
 from keras.models import Sequential
 from keras.models import load_model
@@ -11,35 +13,23 @@ class LSTMEstimator(Estimator):
 
     LSTM_MODEL_DIR = "lstm_models"
 
-    def __init__(self, x_train, x_test, y_train, y_test, sat_name, verbose_level=0):
+    def __init__(self, x_train, x_test, y_train, y_test, sat_name, model):
         Estimator.__init__(self, x_train, x_test, y_train, y_test, sat_name)
         self.loss = None
         self.history = None
-        self.verbose_level = verbose_level
+        self.regressor = model
 
     def build_model(self):
         if self.regressor is None:
             self.regressor = Sequential()
         else:
-            print("WARNING: model was already build.")
-
-    def rebuild_model(self):
-        self.regressor = Sequential()
+            logging.warning('Model was already build.')
 
     def save_model(self, name):
         self.regressor.save(LSTMEstimator.LSTM_MODEL_DIR + os.sep + name + '.h5')
 
     def load_model(self, name):
         self.regressor = load_model(LSTMEstimator.LSTM_MODEL_DIR + os.sep + name + '.h5')
-
-    def add(self, layer):
-        if self.regressor is not None:
-            self.regressor.add(layer)
-        else:
-            print("ERROR: build model first!")
-
-    def compile(self, loss='mean_squared_error', optimizer='adam'):
-        self.regressor.compile(loss=loss, optimizer=optimizer)
 
     def fit(self):
         self.history = self.regressor.fit(
@@ -60,3 +50,34 @@ class LSTMEstimator(Estimator):
 
     def calculate_fitness(self):
         self.fitness = self.loss
+
+
+class LSTMEstimatorFactory:
+
+    def __init__(self):
+        pass
+
+    def build_double_layer_estimator(self):
+        model = tf.keras.Sequential()
+        model.add(tf.keras.layers.LSTM(32,
+                                       dropout=0.2,
+                                       recurrent_dropout=0.2,
+                                       return_sequences=True,
+                                       activation='relu',
+                                       kernel_regularizer=regularizers.l2(0.001),
+                                       stateful=False,
+                                       input_shape=(None, train_data.shape[-1])
+                                       ))
+        model.add(tf.keras.layers.LSTM(128,
+                                       dropout=0.5,
+                                       recurrent_dropout=0.5,
+                                       activation='relu',
+                                       kernel_regularizer=regularizers.l2(0.001),
+                                       stateful=False
+                                       ))
+        model.add(tf.keras.layers.Dense(1,
+                                        activation='linear'
+                                        ))
+        model.compile(loss='mse', optimizer='rmsprop')
+
+        return model
