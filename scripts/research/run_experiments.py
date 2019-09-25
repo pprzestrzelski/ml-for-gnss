@@ -95,8 +95,13 @@ class Experiment:
 
     def __plot_predictions(self):
         for name, prediction in self.predictions.items():
-            plt.plot(prediction)
-            plt.show()
+            plt.plot(prediction, label=name)
+            #plt.yticks(np.arange(-3, 3.01, 0.5))
+            #plt.ylim([-3, 3])
+            plt.legend()
+        plt.show()
+
+
 def main():
     logging.basicConfig(format='<%(asctime)s> : %(message)s', level=logging.INFO)
     e = Experiment(1)
