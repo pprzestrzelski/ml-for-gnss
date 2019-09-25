@@ -1,6 +1,7 @@
 import os
 import logging
 import tensorflow as tf
+import numpy as np
 from scripts.core.ml.Estimator import Estimator
 from keras.models import Sequential
 from keras.models import load_model
@@ -13,11 +14,13 @@ class LSTMEstimator(Estimator):
 
     LSTM_MODEL_DIR = "lstm_models"
 
-    def __init__(self, x_train, x_test, y_train, y_test, sat_name, model):
+    def __init__(self, x_train, x_test, y_train, y_test, sat_name, model, scaler):
         Estimator.__init__(self, x_train, x_test, y_train, y_test, sat_name)
         self.loss = None
         self.history = None
         self.regressor = model
+        self.scaler = scaler
+        self.__transdorm_data_for_lstm()
 
     def build_model(self):
         if self.regressor is None:
@@ -50,6 +53,19 @@ class LSTMEstimator(Estimator):
 
     def calculate_fitness(self):
         self.fitness = self.loss
+
+    def __transdorm_data_for_lstm(self):
+        self.x_train, self.y_train = self.__create_lstm_dataset(self.y_train)
+        self.x_test, self.y_test = self.__create_lstm_dataset(self.y_test)
+
+    @staticmethod
+    def __create_lstm_dataset(dataset, look_back=1):
+        data_x, data_y = [], []
+        for i in range(len(dataset) - look_back - 1):
+            a = dataset[i: (i + look_back), 0]
+            data_x.append(a)
+            data_y.append(dataset[i + look_back, 0])
+        return np.array(data_x), np.array(data_y)
 
 
 class LSTMEstimatorFactory:
