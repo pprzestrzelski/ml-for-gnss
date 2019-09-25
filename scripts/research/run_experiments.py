@@ -3,6 +3,7 @@ import sys
 import pandas as pd
 import numpy as np
 import scripts.research.lstm_utils as lstm_utils
+import matplotlib.pyplot as plt
 from scripts.core.ml.LinearEstimator import LinearEstimator
 from sklearn.model_selection import train_test_split
 
@@ -16,14 +17,16 @@ class Experiment:
     def __init__(self, satellite_number: int):
         self.satellite_number = satellite_number
         self.sat_id = '{0:02d}'.format(self.satellite_number)
+        self.predictions = {}
 
     def run(self, save_plots=False):
         self.__prepare_data()
         lstm_utils.plot_raw_data(self.raw_data, save_plots)
         diff_values = self.__differentiate_train_data()
-        lstm_utils.plot_differences(diff_values, save_plots)
+        self.__plot_differences(diff_values, save_plots)
         self.__prepare_estimators()
         self.__run_estimators()
+        self.__plot_predictions()
 
     def __prepare_data(self):
         logging.info('Executing experiment for satellite {}'.format(self.satellite_number))
@@ -73,7 +76,27 @@ class Experiment:
             estimator.predict()
             res = estimator.stats()
             mae, mse, rms = res
+            self.predictions[name] = estimator.y_pred
             logging.info('{0:s} => MAE = {1:2.4f} MSE = {2:2.4f} RMS = {3:2.4f}'.format(name, mae, mse, rms))
+
+    def __plot_differences(self, data, print_plot=False):
+        plt.plot(data, 'k')
+        epochs = len(data)
+        logging.info("Plot differences")
+        logging.info("Max diff: {}".format(max(data)))
+        logging.info("Min diff: {}".format(min(data)))
+        plt.xlabel('Epoka')
+        plt.ylabel('Różnica opóźnień [ns]')
+        #plt.xticks(np.arange(0, epochs, 192))
+        #plt.yticks(np.arange(-3, 3.01, 0.5))
+        #plt.xlim([0, epochs])
+        #plt.ylim([-3, 3])
+        plt.show()
+
+    def __plot_predictions(self):
+        for name, prediction in self.predictions.items():
+            plt.plot(prediction)
+            plt.show()
 def main():
     logging.basicConfig(format='<%(asctime)s> : %(message)s', level=logging.INFO)
     e = Experiment(1)

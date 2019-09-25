@@ -5,7 +5,7 @@ import numpy as np
 from scripts.core.ml.Estimator import Estimator
 from keras.models import Sequential
 from keras.models import load_model
-
+from keras import regularizers
 
 # https://keras.io/preprocessing/sequence/
 # https://keras.io/models/model/
@@ -30,6 +30,7 @@ class LSTMEstimator(Estimator):
 
     def save_model(self, name):
         self.regressor.save(LSTMEstimator.LSTM_MODEL_DIR + os.sep + name + '.h5')
+
 
     def load_model(self, name):
         self.regressor = load_model(LSTMEstimator.LSTM_MODEL_DIR + os.sep + name + '.h5')
