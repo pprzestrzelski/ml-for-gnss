@@ -59,6 +59,7 @@ class LSTMEstimator(Estimator):
         self.fitness = self.loss
 
     def __transdorm_data_for_lstm(self):
+        
         self.x_train, self.y_train = self.__create_lstm_dataset(self.y_train)
         self.x_test, self.y_test = self.__create_lstm_dataset(self.y_test)
 
