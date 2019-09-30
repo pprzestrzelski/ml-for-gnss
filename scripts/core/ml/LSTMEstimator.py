@@ -6,6 +6,7 @@ from scripts.core.ml.Estimator import Estimator
 from keras.models import Sequential
 from keras.models import load_model
 from keras import regularizers
+from scripts.research.lstm_utils import Scaler 
 
 # https://keras.io/preprocessing/sequence/
 # https://keras.io/models/model/
@@ -14,12 +15,14 @@ class LSTMEstimator(Estimator):
 
     LSTM_MODEL_DIR = "lstm_models"
 
-    def __init__(self, x_train, x_test, y_train, y_test, sat_name, model, scaler):
+    def __init__(self, x_train, x_test, y_train, y_test, sat_name, model, scaler,
+                 window_size):
         Estimator.__init__(self, x_train, x_test, y_train, y_test, sat_name)
         self.loss = None
         self.history = None
         self.regressor = model
         self.scaler = scaler
+        self.window_size = window_size
         self.__transdorm_data_for_lstm()
 
     def build_model(self):
@@ -60,12 +63,12 @@ class LSTMEstimator(Estimator):
         self.x_test, self.y_test = self.__create_lstm_dataset(self.y_test)
 
     @staticmethod
-    def __create_lstm_dataset(dataset, look_back=1):
+    def __create_lstm_dataset(dataset):
         data_x, data_y = [], []
-        for i in range(len(dataset) - look_back - 1):
-            a = dataset[i: (i + look_back), 0]
+        for i in range(len(dataset) - self.window_size - 1):
+            a = dataset[i: (i + self.window_size), 0]
             data_x.append(a)
-            data_y.append(dataset[i + look_back, 0])
+            data_y.append(dataset[i + self.window_size, 0])
         return np.array(data_x), np.array(data_y)
 
 
@@ -74,7 +77,7 @@ class LSTMEstimatorFactory:
     def __init__(self):
         pass
 
-    def build_double_layer_estimator(self):
+    def build_double_layer_estimator(self, window_size, scale=0):
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.LSTM(32,
                                        dropout=0.2,
@@ -83,7 +86,7 @@ class LSTMEstimatorFactory:
                                        activation='relu',
                                        kernel_regularizer=regularizers.l2(0.001),
                                        stateful=False,
-                                       input_shape=(None, train_data.shape[-1])
+                                       input_shape=(None, window_size)
                                        ))
         model.add(tf.keras.layers.LSTM(128,
                                        dropout=0.5,
@@ -96,5 +99,12 @@ class LSTMEstimatorFactory:
                                         activation='linear'
                                         ))
         model.compile(loss='mse', optimizer='rmsprop')
+
+        scaler = None
+        if scale != 0:
+            logging.error('Custom scaling not yet implemented.')
+        
+        estimator = LSTMEstimator(x_train, x_test, y_train, y_test, sat_name, model, scaler,
+                                  window_size)
 
         return model
