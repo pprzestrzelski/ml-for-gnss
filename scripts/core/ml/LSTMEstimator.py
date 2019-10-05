@@ -63,13 +63,12 @@ class LSTMEstimator(Estimator):
         self.x_train, self.y_train = self.__create_lstm_dataset(self.y_train)
         self.x_test, self.y_test = self.__create_lstm_dataset(self.y_test)
 
-    @staticmethod
-    def __create_lstm_dataset(dataset):
+    def __create_lstm_dataset(self, dataset):
         data_x, data_y = [], []
         for i in range(len(dataset) - self.window_size - 1):
-            a = dataset[i: (i + self.window_size), 0]
+            a = dataset[i: (i + self.window_size)]
             data_x.append(a)
-            data_y.append(dataset[i + self.window_size, 0])
+            data_y.append(dataset[i + self.window_size])
         return np.array(data_x), np.array(data_y)
 
 
@@ -78,7 +77,7 @@ class LSTMEstimatorFactory:
     def __init__(self):
         pass
 
-    def build_double_layer_estimator(self, window_size, scale=0):
+    def build_double_layer_estimator(self, x_train, x_test, y_train, y_test, sat_name, window_size, scale=0):
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.LSTM(32,
                                        dropout=0.2,

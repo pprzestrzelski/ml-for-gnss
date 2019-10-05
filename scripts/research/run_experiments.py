@@ -5,6 +5,7 @@ import numpy as np
 import scripts.research.lstm_utils as lstm_utils
 import matplotlib.pyplot as plt
 from scripts.core.ml.LinearEstimator import LinearEstimator
+from scripts.core.ml.LSTMEstimator import LSTMEstimatorFactory
 from sklearn.model_selection import train_test_split
 
 TRAIN_FILE_NAME_PATTERN = 'conversions/train_data/raw_csv/G{0:02d}.csv'
@@ -68,7 +69,10 @@ class Experiment:
              'Poly-4th': LinearEstimator(self.x_train, self.x_test, self.y_train, self.y_test, self.sat_id,
                                          estimator='OLS', degree=4),
              'Poly-8th': LinearEstimator(self.x_train, self.x_test, self.y_train, self.y_test, self.sat_id,
-                                         estimator='OLS', degree=8)}
+                                         estimator='OLS', degree=8),
+             'LSTM': LSTMEstimatorFactory().build_double_layer_estimator(self.x_train, self.x_test, self.y_train,
+                                                                         self.y_test, self.sat_id,3)
+             }
 
     def __run_estimators(self):
         for name, estimator in self.estimators.items():
