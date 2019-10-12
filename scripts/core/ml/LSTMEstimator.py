@@ -42,7 +42,8 @@ class LSTMEstimator(Estimator):
         self.history = self.regressor.fit(
             self.x_train, self.y_train,
             epochs=1000, validation_data=(self.x_test, self.y_test),
-            shuffle=False, verbose=self.verbose_level)
+            shuffle=False, steps_per_epoch=10,
+            validation_steps=3)
 
     def evaluate(self):
         self.loss = self.regressor.evaluate(self.x_train, self.y_train, verbose=self.verbose_level)
@@ -107,4 +108,4 @@ class LSTMEstimatorFactory:
         estimator = LSTMEstimator(x_train, x_test, y_train, y_test, sat_name, model, scaler,
                                   window_size)
 
-        return model
+        return estimator
