@@ -2,7 +2,7 @@
 
 # WYWOŁANIE
 # train_for_gnss <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <ROZMIAR_WEJŚCIA_SIECI> <ILOŚĆ_EPOK> <STOSUNEK TRENING/TEST>
-# <KATALOG_Z_WYJŚCIEM>
+# <NAZWA_DLA_PLIKÓW_WYJŚCIOWYCH> <KATALOG_Z_WYJŚCIEM>
 
 # Importowanie bibliotek
 import numpy as np
@@ -14,10 +14,11 @@ import sys
 import tensorflow as tf
 from keras import regularizers
 from math import floor
+import os
 
 
 # noinspection DuplicatedCode
-def plot_lstm_loss(history, print_plot=False):
+def plot_lstm_loss(history, save_dir, file_name):
     loss = history.history['loss']
     val_loss = history.history['val_loss']
     epochs = range(1, len(loss)+1)
@@ -32,8 +33,9 @@ def plot_lstm_loss(history, print_plot=False):
     plt.xticks(np.arange(0, len(loss)+10, 10))
 
     rcParams['figure.figsize'] = (5.5, 3)
-    if print_plot:
-        plt.savefig("__loss.png", bbox_inches='tight')
+    file_name = '{}_loss.png'.format(file_name)
+    file_path = os.path.join(save_dir, file_name)
+    plt.savefig(file_path, bbox_inches='tight')
     plt.show()
 
 
@@ -102,8 +104,19 @@ def main(argv):
     epochs = int(argv[4])
     history = model.fit(x_train, y_train, epochs=epochs, batch_size=32,
                         validation_data=(x_test, y_test), shuffle=False)
-    plot_lstm_loss(history, False)
+
+    # Zapisywanie wyników
+    plot_lstm_loss(history, argv[7], argv[6])
+    file_name = argv[6]
+    file_name = '{}_model.h5'.format(file_name)
+    file_path = os.path.join(argv[7], file_name)
+    model.save_weights(file_path)
+    print('Model saved do not worry about exception.')
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    try:
+        main(sys.argv)
+        print('Exception did not occured.')
+    except Exception as e:
+        print('Exception occured -> {}'.format(str(e)))
