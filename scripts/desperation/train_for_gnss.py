@@ -1,17 +1,40 @@
 #!/usr/bin/env python
 
+# WYWOŁANIE
+# train_for_gnss <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <ROZMIAR_WEJŚCIA_SIECI> <ILOŚĆ_EPOK> <STOSUNEK TRENING/TEST>
+# <KATALOG_Z_WYJŚCIEM>
+
 # Importowanie bibliotek
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import sys
 import tensorflow as tf
 from keras import regularizers
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers import Dropout
+from math import floor
+
+
+# noinspection DuplicatedCode
+def plot_lstm_loss(history, print_plot=False):
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    epochs = range(1, len(loss)+1)
+    plt.figure()
+    plt.plot(epochs, loss, 'b', label='Strata trenowania')
+    plt.plot(epochs, val_loss, 'r', label='Strata walidacji')
+    plt.xlabel('Epoka')
+    plt.ylabel('Wartość funkcji straty')
+    plt.legend()
+
+    plt.xlim([1, len(loss)])
+    plt.xticks(np.arange(0, len(loss)+10, 10))
+
+    rcParams['figure.figsize'] = (5.5, 3)
+    if print_plot:
+        plt.savefig("__loss.png", bbox_inches='tight')
+    plt.show()
 
 
 # noinspection DuplicatedCode
@@ -44,6 +67,14 @@ def main(argv):
     # Przekształcamy wejścia tak żeby pasowały do sieci LSTM
     inputs = np.reshape(inputs, (inputs.shape[0], inputs.shape[1], 1))
 
+    # Rozdzielamy dane na treningowe i testowe
+    train_coeff = float(argv[5])
+    tr_count = floor(len(inputs) * train_coeff)
+    x_train = inputs[:tr_count, :]
+    y_train = outputs[:tr_count]
+    x_test = inputs[tr_count:, :]
+    y_test = outputs[tr_count:]
+
     # Tworzymy sieć neuronową
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.LSTM(32,
@@ -68,7 +99,11 @@ def main(argv):
     model.compile(loss='mse', optimizer='rmsprop')
 
     # Uczenie dla danych wejściowych i wyjściowych
-    model.fit(inputs, outputs, epochs=100, batch_size=32)
+    epochs = int(argv[4])
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=32,
+                        validation_data=(x_test, y_test), shuffle=False)
+    plot_lstm_loss(history, False)
+
 
 if __name__ == '__main__':
     main(sys.argv)
