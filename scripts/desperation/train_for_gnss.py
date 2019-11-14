@@ -108,7 +108,13 @@ def main(argv):
     # Zapisywanie wyników
     plot_lstm_loss(history, argv[7], argv[6])
     file_name = argv[6]
-    file_name = '{}_model.h5'.format(file_name)
+    file_name = '{}_model.json'.format(file_name)
+    file_path = os.path.join(argv[7], file_name)
+    model_json = model.to_json()
+    with open(file_path, "w") as json_file:
+        json_file.write(model_json)
+    file_name = argv[6]
+    file_name = '{}_weights.h5'.format(file_name)
     file_path = os.path.join(argv[7], file_name)
     model.save_weights(file_path)
     print('Model saved do not worry about exception.')
