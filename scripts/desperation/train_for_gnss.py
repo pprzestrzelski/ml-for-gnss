@@ -39,6 +39,13 @@ def plot_lstm_loss(history, save_dir, file_name):
     plt.show()
 
 
+def diff(dataset):
+    diffs = list()
+    for i in range(1, len(dataset)):
+        diffs.append(dataset[i] - dataset[i - 1])
+    return np.asarray(diffs)
+
+
 # noinspection DuplicatedCode
 def main(argv):
     # Wczytujemy dane plik z danymi podany jako pierwszy argument w terminalu
@@ -47,6 +54,9 @@ def main(argv):
     # Wyciągamy interesujące nas dane z zbioru danych, nazwa kolumny jest podana
     # jako drugi parametr
     time_series = dataset[argv[2]].to_numpy()
+
+    # Zmieniamy szereg wartości w szereg różnic pomiędzy wartościami
+    time_series = diff(time_series)
 
     # Skalujemy dane tak żeby nie wychodziły poza przedział <-1;1>
     scaler = MinMaxScaler(feature_range=(-1, 1))
