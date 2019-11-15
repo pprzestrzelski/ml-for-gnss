@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import numpy as np
 import pandas as pd
@@ -65,8 +67,12 @@ def main(argv):
     # Kompilujemy model, parametry ustawione na sztywno tak jak w skrypcie uczącym
     # paskudny antipattern
     model.compile(loss='mse', optimizer='rmsprop')
-    predict_with_lstm(model, time_series, scale,
-                      input_size, prediction_depth)
+
+    # Zapisujemy predykcje z modelu LSTM !!!
+    lstm_predictions = predict_with_lstm(model, time_series, scale,
+                                         input_size, prediction_depth)
+
+
 
 
 if __name__ == '__main__':

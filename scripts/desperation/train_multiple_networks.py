@@ -2,7 +2,7 @@
 
 # WYWOŁANIE
 # train_multiple_networks <KATALOG_Z_DANYMI> <NAZWA_KOLUMNY> <ROZMIAR_WEJŚCIA_SIECI> <ILOŚĆ_EPOK>
-# <STOSUNEK TRENING/TEST> <KATALOG_Z_REZULTATAMI>
+# <STOSUNEK TRENING/TEST> <KATALOG_Z_REZULTATAMI> <WSPÓŁCZYNNIK_SKALOWANIA>
 
 
 import sys
@@ -23,7 +23,8 @@ def main(argv):
 
     for i in range(len(files)):
         print('{} -> {}'.format(names[i], files[i]))
-        training_script.main(['', files[i], argv[2], argv[3], argv[4], argv[5], names[i], argv[6]])
+        training_script.main(['', files[i], argv[2], argv[3], argv[4],
+                              argv[5], names[i], argv[6], argv[7]])
 
 
 if __name__ == '__main__':

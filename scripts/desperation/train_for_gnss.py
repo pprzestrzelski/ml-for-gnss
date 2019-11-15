@@ -2,7 +2,7 @@
 
 # WYWOŁANIE
 # train_for_gnss <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <ROZMIAR_WEJŚCIA_SIECI> <ILOŚĆ_EPOK> <STOSUNEK TRENING/TEST>
-# <NAZWA_DLA_PLIKÓW_WYJŚCIOWYCH> <KATALOG_Z_WYJŚCIEM>
+# <NAZWA_DLA_PLIKÓW_WYJŚCIOWYCH> <KATALOG_Z_WYJŚCIEM> <WSPÓŁCZYNNIK_SKALOWANIA>
 
 # Importowanie bibliotek
 import numpy as np
@@ -59,10 +59,8 @@ def main(argv):
     time_series = diff(time_series)
 
     # Skalujemy dane tak żeby nie wychodziły poza przedział <-1;1>
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    time_series_for_scaler = time_series.reshape(1, -1)  # Fit musi mieć tablicę 2D
-    scaled_time_series = scaler.fit_transform(time_series_for_scaler)
-    scaled_time_series = scaled_time_series.reshape(-1)  # I z powrotem do jednowymiarowej
+    scaled_time_series = time_series * float(argv[8])
+
 
     # Tworzymy zestaw wejść i wyjść
     input_size = int(argv[3])
