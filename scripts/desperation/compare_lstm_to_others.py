@@ -42,7 +42,7 @@ def diff(dataset):
     return np.asarray(diffs)
 
 
-def plot_prediction(ref_biases, predicted_biases, igu_pred_biases, print_plot=False):
+def plot_prediction(ref_biases, predicted_biases, igu_pred_biases):
     plt.plot(predicted_biases, 'r-.', label='LSTM')
     plt.plot(igu_pred_biases, 'k--', label='IGU-P')
     plt.plot(ref_biases, 'b', label='referencyjne opóźnienia')
