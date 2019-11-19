@@ -60,6 +60,14 @@ def plot_prediction(ref_biases, predicted_biases, igu_pred_biases, print_plot=Fa
 
 def main(argv):
 
+    argc = len(argv)
+    argc_desired = 9
+    if argc != argc_desired:
+        print("Wrong number of input arguments!")
+        print("Usage: compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> "
+              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PRN_SATELITY>")
+        return
+
     # Dla trochę lepszej czytelności
     prediction_depth = int(argv[6])
     input_size = int(argv[5])
