@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pandas as pd
 from keras.models import model_from_json
+from matplotlib import pyplot as plt
 
 #                             [1]             [2]                [3]                 [4]              [5]
 # compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> <ROZMIAR_WEJSCIA>
@@ -41,6 +42,22 @@ def diff(dataset):
     return np.asarray(diffs)
 
 
+def plot_prediction(ref_biases, predicted_biases, igu_pred_biases, print_plot=False):
+    plt.plot(predicted_biases, 'r-.', label='LSTM')
+    plt.plot(igu_pred_biases, 'k--', label='IGU-P')
+    plt.plot(ref_biases, 'b', label='referencyjne opóźnienia')
+    # plt.xlim([0, 96])
+    plt.ylabel('Opóźnienie [ns]')
+    plt.xlabel('Epoka')
+    # plt.yticks(np.arange(-4300, -4200, 10))
+    # plt.xticks(np.arange(0, 97, 8))
+    # plt.ylim([-4270, -4210])
+    # plt.xlim([0, 96])
+    plt.legend()
+    # rcParams['figure.figsize'] = (5.5, 4.5)
+    plt.show()
+
+
 def main(argv):
 
     # Dla trochę lepszej czytelności
@@ -75,7 +92,17 @@ def main(argv):
     lstm_predictions = predict_with_lstm(model, time_series, scale,
                                          input_size, prediction_depth)
 
+    # Porownujemy wyniki z wartosciami referencyjnymi (IGU Observed) i oficjalnymi predykcjami (IGU Predicted)
+    # UWAGA: ponizsze katalogi z odpowiednimi plikami trzeba dodac samodzielnie!
+    gps_prn = argv[8]   # e.g. G05
+    ref_file_name = "ref_data/igu_observed/{}.csv".format(gps_prn)  # ref data to test ANN
+    igu_pred_file_name = "ref_data/igu_predicted/{}.csv".format(gps_prn)  # comparable predictions by IGU-P
 
+    ref_biases = pd.read_csv(ref_file_name, sep=';', header=0, parse_dates=[0], index_col=0, squeeze=True).values
+    igu_pred_biases = pd.read_csv(igu_pred_file_name, sep=';', header=0,
+                                  parse_dates=[0], index_col=0, squeeze=True).values
+
+    plot_prediction(ref_biases, lstm_predictions, igu_pred_biases)
 
 
 if __name__ == '__main__':
