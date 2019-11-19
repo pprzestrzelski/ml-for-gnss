@@ -5,8 +5,11 @@ import numpy as np
 import pandas as pd
 from keras.models import model_from_json
 
-# train_for_gnss <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <PLIK_Z_MODELEM> <PLIK_Z_WAGAMI> <KATALOG_DLA_WYJŚĆ>
-# <SKALOWANIE (NORMALIZACJA)> <ROZMIAR_WEJŚCIA_SIECI> <GŁĘBOKOŚĆ_PREDYKCJI>
+#                             [1]             [2]                [3]                 [4]              [5]
+# compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> <ROZMIAR_WEJSCIA>
+#                        <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PRN_SATELITY>
+#                                 [6]                     [7]                 [8]
+
 
 # Based on https://towardsdatascience.com/using-lstms-to-forecast-time-series-4ab688386b1f
 # noinspection DuplicatedCode
@@ -43,7 +46,7 @@ def main(argv):
     # Dla trochę lepszej czytelności
     prediction_depth = int(argv[6])
     input_size = int(argv[5])
-    scale = float(argv[4])
+    scale = float(argv[7])
 
     # Wczytujemy dane plik z danymi podany jako pierwszy argument w terminalu
     dataset = pd.read_csv(argv[1], sep=';')
