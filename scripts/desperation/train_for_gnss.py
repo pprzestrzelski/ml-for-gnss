@@ -76,17 +76,28 @@ def main(argv):
     outputs = np.asarray(outputs)
 
     # Przekształcamy wejścia tak żeby pasowały do sieci LSTM
-    inputs = np.reshape(inputs, (inputs.shape[0], inputs.shape[1], 1))
+    #inputs = np.reshape(inputs, (1, inputs.shape[0], inputs.shape[1]))
+    #outputs = np.reshape(outputs, (1, outputs.shape[0]))
+    print('inputs = {}'.format(inputs.shape))
+    print('outputs = {}'.format(outputs.shape))
+    #sys.exit()
+
 
     # Rozdzielamy dane na treningowe i testowe
     train_coeff = float(argv[5])
-    tr_count = floor(len(inputs) * train_coeff)
+    tr_count = floor(inputs.shape[0] * train_coeff)
+    print('tr_count = {}'.format(tr_count))
     x_train = inputs[:tr_count, :]
+    x_train = np.reshape(x_train, (x_train.shape[0],1,x_train.shape[1]))
     y_train = outputs[:tr_count]
     x_test = inputs[tr_count:, :]
+    x_test = np.reshape(x_test, (x_test.shape[0],1,x_test.shape[1]))
     y_test = outputs[tr_count:]
 
     # Tworzymy sieć neuronową
+    print('x_train = {}'.format(x_train.shape))
+    print('y_train = {}'.format(y_train.shape))
+    #sys.exit()
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.LSTM(32,
                                    dropout=0.2,
@@ -95,7 +106,7 @@ def main(argv):
                                    activation='relu',
                                    kernel_regularizer=regularizers.l2(0.001),
                                    stateful=False,
-                                   input_shape=(None, inputs.shape[-1])
+                                   input_shape=(None, x_train.shape[-1])
                                    ))
     model.add(tf.keras.layers.LSTM(128,
                                    dropout=0.5,

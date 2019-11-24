@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from keras.models import model_from_json
 from matplotlib import pyplot as plt
 
@@ -19,6 +20,8 @@ def predict_with_lstm(model, time_series, scale, window_size, depth):
     time_series = time_series / scale
     windowed_data = list(time_series[-window_size:])
 
+    print(window_size)
+    #sys.exit()
     # predict!
     for _ in range(depth):
         predictioner = np.array(windowed_data)
@@ -43,6 +46,8 @@ def diff(dataset):
 
 
 def plot_prediction(ref_biases, predicted_biases, igu_pred_biases):
+    predicted_biases = np.asarray(predicted_biases).flatten
+    #print(predicted_biases.shape)
     plt.plot(predicted_biases, 'r-.', label='LSTM')
     plt.plot(igu_pred_biases, 'k--', label='IGU-P')
     plt.plot(ref_biases, 'b', label='referencyjne opóźnienia')
@@ -87,7 +92,7 @@ def main(argv):
     model_json = None
     with open(argv[3], 'r') as json_file:
         model_json = json_file.read()
-    model = model_from_json(model_json)
+    model = tf.keras.models.model_from_json(model_json)
 
     # Doczytujemy do modelu wagi
     model.load_weights(argv[4])

@@ -8,7 +8,7 @@
 
 import sys
 import os
-import scripts.desperation.train_for_gnss as training_script
+import train_for_gnss as training_script
 
 
 def main(argv):
