@@ -47,11 +47,11 @@ def return_to_original_form(diffs, first_value, scale):
 def main(argv):
 
     argc = len(argv)
-    argc_desired = 9
+    argc_desired = 10
     if argc != argc_desired:
         print("Wrong number of input arguments!")
         print("Usage: compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> "
-              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PRN_SATELITY>")
+              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PRN_SATELITY> <PLIK_WYJŚCIOWY>")
         return
 
     # Dla trochę lepszej czytelności
@@ -98,8 +98,10 @@ def main(argv):
         prediction_epochs.append(last_epoch)
     
     print(time_series.shape)
-    print(np.asarray(bias))
-    print(np.asarray(prediction_epochs))
+    data = {'Epoch':prediction_epochs, 'Clock_bias':bias}
+    dataframe = pd.DataFrame(data)
+    print(dataframe.head())
+    dataframe.to_csv(argv[9], sep=';', index=False)
 
 if __name__ == '__main__':
     main(sys.argv)
