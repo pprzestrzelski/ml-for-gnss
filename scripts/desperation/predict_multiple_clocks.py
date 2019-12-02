@@ -43,7 +43,7 @@ def main(argv):
                     sat.data_file =  os.path.join(r, file)
                     sat.topology_file =  os.path.join(network_path, ''.join([name, '_model.json']))
                     sat.weights_file =  os.path.join(network_path, ''.join([name, '_weights.h5']))
-                    sat.output_file =  os.path.join(output_folder, ''.join([name, '.csv']))
+                    sat.output_file =  os.path.join(output_folder, ''.join([name, '_lstm.csv']))
                     satellites[name] = sat
 
 
