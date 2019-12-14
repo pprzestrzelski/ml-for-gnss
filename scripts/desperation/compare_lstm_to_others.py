@@ -29,8 +29,8 @@ def main(argv):
     
     # Set GPS number and directories with data
     lstm_file_name = argv[1]
-    ref_file_name = argv[2]
-    igu_pred_file_name = argv[3]
+    igu_pred_file_name = argv[2]
+    ref_file_name = argv[3]
     
     # Read data from CSV
     lstm_pred_biases = pd.read_csv(lstm_file_name, sep=',',
