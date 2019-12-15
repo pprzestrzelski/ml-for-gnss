@@ -69,6 +69,9 @@ def main(argv):
     epoch_step = dataset['Epoch'][1] - start_epoch
     last_epoch = dataset['Epoch'].to_numpy()[-1]
 
+    print('LAST EPOCH = {} EPOCH STEP = {}'.format(last_epoch, epoch_step))
+    #sys.exit()
+
     first_value = time_series[-1]
     
     # Zmieniamy szereg wartości w szereg różnic pomiędzy wartościami
@@ -93,13 +96,15 @@ def main(argv):
 
     bias = return_to_original_form(np.asarray(lstm_predictions).flatten(), first_value, scale)
     prediction_epochs = []
-    for _ in bias:
+    for i in range(len(bias)):
+        print('DEPTH = {} EPOCH = {} STEP = {}'.format(i, last_epoch, epoch_step))
         last_epoch += epoch_step
         prediction_epochs.append(last_epoch)
     
     print(time_series.shape)
     data = {'Epoch':prediction_epochs, 'Clock_bias':bias}
     dataframe = pd.DataFrame(data)
+    dataframe = dataframe[['Epoch', 'Clock_bias']]
     print(dataframe.head())
     dataframe.to_csv(argv[9], sep=';', index=False)
 
