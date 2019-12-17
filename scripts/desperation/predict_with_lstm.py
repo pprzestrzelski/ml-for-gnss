@@ -47,11 +47,12 @@ def return_to_original_form(diffs, first_value, scale):
 def main(argv):
 
     argc = len(argv)
-    argc_desired = 9
+    argc_desired = 11
     if argc != argc_desired:
         print("Wrong number of input arguments!")
         print("Usage: compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> "
-              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PLIK_WYJŚCIOWY>")
+              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PLIK_WYJŚCIOWY>"
+              "<EPOKA_ZEROWA_PREDYKCJI> <KROK_CZASOWY_PREDYKCJI>")
         return
 
     # Dla trochę lepszej czytelności
@@ -63,6 +64,8 @@ def main(argv):
     prediction_depth = int(argv[6])
     scale = float(argv[7])
     output_file_name = argv[8]
+    last_epoch = float(argv[9])
+    epoch_step = float(argv[10])
 
     # Wczytujemy dane plik z danymi podany jako pierwszy argument w terminalu
     dataset = pd.read_csv(input_file_name, sep=';')
@@ -71,8 +74,6 @@ def main(argv):
     # jako drugi parametr
     time_series = dataset[column_name].to_numpy()
     start_epoch = dataset['Epoch'][0]
-    epoch_step = dataset['Epoch'][1] - start_epoch
-    last_epoch = dataset['Epoch'].to_numpy()[-1]
 
     print('LAST EPOCH = {} EPOCH STEP = {}'.format(last_epoch, epoch_step))
     #sys.exit()

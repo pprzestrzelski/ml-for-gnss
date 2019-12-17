@@ -30,6 +30,9 @@ def main(argv):
     prediction_depth = argv[5]
     scaling_factor = argv[6]
     output_folder = argv[7]
+    last_epoch = float(argv[8])
+    epoch_step = float(argv[9])
+
 
     satellites = {}
 
@@ -50,7 +53,7 @@ def main(argv):
     for name, sat in satellites.items():
         print('{} -> {}'.format(name, sat))
         predictor.main(['', sat.data_file, column_name, sat.topology_file, sat.weights_file, input_size,
-                        prediction_depth, scaling_factor, sat.output_file])
+                        prediction_depth, scaling_factor, sat.output_file, last_epoch, epoch_step])
 
 
 if __name__ == '__main__':

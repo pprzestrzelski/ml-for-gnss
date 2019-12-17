@@ -12,5 +12,5 @@ This project aims to study usability of ML tools in GNSS positioning. Its core c
 
 ## How to run
 * ./train_multiple_networks.py data/ Clock_bias 32 20 0.8 nets/ 0.0800576415016
-* ./predict_multiple_clocks.py data/ Clock_bias nets/ 32 96 0.0800576415016 predictions/
+* ./predict_multiple_clocks.py data/ Clock_bias nets/ 32 96 0.0800576415016 predictions/ 2011.0 0.003
 * ./compare_lstm_to_others.py predictions/G01_lstm.csv igu_predicted/G01.csv igu_predicted/G01.csv 
