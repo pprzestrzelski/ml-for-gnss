@@ -50,7 +50,7 @@ def main(argv):
     for name, sat in satellites.items():
         print('{} -> {}'.format(name, sat))
         predictor.main(['', sat.data_file, column_name, sat.topology_file, sat.weights_file, input_size,
-                        prediction_depth, scaling_factor, name, sat.output_file])
+                        prediction_depth, scaling_factor, sat.output_file])
 
 
 if __name__ == '__main__':

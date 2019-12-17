@@ -47,24 +47,29 @@ def return_to_original_form(diffs, first_value, scale):
 def main(argv):
 
     argc = len(argv)
-    argc_desired = 10
+    argc_desired = 9
     if argc != argc_desired:
         print("Wrong number of input arguments!")
         print("Usage: compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> "
-              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PRN_SATELITY> <PLIK_WYJŚCIOWY>")
+              "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PLIK_WYJŚCIOWY>")
         return
 
     # Dla trochę lepszej czytelności
-    prediction_depth = int(argv[6])
+    input_file_name = argv[1]
+    column_name = argv[2]
+    topology_file_name = argv[3]
+    weights_file_name = argv[4]
     input_size = int(argv[5])
+    prediction_depth = int(argv[6])
     scale = float(argv[7])
+    output_file_name = argv[8]
 
     # Wczytujemy dane plik z danymi podany jako pierwszy argument w terminalu
-    dataset = pd.read_csv(argv[1], sep=';')
+    dataset = pd.read_csv(input_file_name, sep=';')
 
     # Wyciągamy interesujące nas dane z zbioru danych, nazwa kolumny jest podana
     # jako drugi parametr
-    time_series = dataset[argv[2]].to_numpy()
+    time_series = dataset[column_name].to_numpy()
     start_epoch = dataset['Epoch'][0]
     epoch_step = dataset['Epoch'][1] - start_epoch
     last_epoch = dataset['Epoch'].to_numpy()[-1]
@@ -79,12 +84,12 @@ def main(argv):
 
     # Wczytujemy topologię i parametry naszej sieci neuronowej
     model_json = None
-    with open(argv[3], 'r') as json_file:
+    with open(topology_file_name, 'r') as json_file:
         model_json = json_file.read()
     model = tf.keras.models.model_from_json(model_json)
 
     # Doczytujemy do modelu wagi
-    model.load_weights(argv[4])
+    model.load_weights(weights_file_name)
 
     # Kompilujemy model, parametry ustawione na sztywno tak jak w skrypcie uczącym
     # paskudny antipattern
@@ -106,7 +111,7 @@ def main(argv):
     dataframe = pd.DataFrame(data)
     dataframe = dataframe[['Epoch', 'Clock_bias']]
     print(dataframe.head())
-    dataframe.to_csv(argv[9], sep=';', index=False)
+    dataframe.to_csv(output_file_name, sep=';', index=False)
 
 if __name__ == '__main__':
     main(sys.argv)
