@@ -49,7 +49,7 @@ def main(argv):
     argc = len(argv)
     argc_desired = 11
     if argc != argc_desired:
-        print("Wrong number of input arguments!")
+        print("Wrong number of input arguments! Expected {} got {}.".format(argc_desired, argc))
         print("Usage: compare_lstm_to_others <PLIK_Z_DANYMI> <NAZWA_KOLUMNY> <TOPOLOGIA_SIECI_JSON> <PLIK_Z_WAGAMI> "
               "<ROZMIAR_WEJSCIA> <GLEBOKOSC_PREDYKCJI> <WSPOLCZYNNIK_SKALOWANIA> <PLIK_WYJŚCIOWY>"
               "<EPOKA_ZEROWA_PREDYKCJI> <KROK_CZASOWY_PREDYKCJI>")

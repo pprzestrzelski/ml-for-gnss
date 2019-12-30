@@ -37,7 +37,7 @@ def plot_lstm_loss(history, save_dir, file_name):
     file_name = '{}_loss.png'.format(file_name)
     file_path = os.path.join(save_dir, file_name)
     plt.savefig(file_path, bbox_inches='tight')
-    plt.show()
+    #plt.show()
 
 
 def diff(dataset):
