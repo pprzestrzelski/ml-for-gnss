@@ -85,7 +85,7 @@ def main(argv):
 
     # Rozdzielamy dane na treningowe i testowe
     train_coeff = float(argv[5])
-    tr_count = floor(inputs.shape[0] * train_coeff)
+    tr_count = int(floor(inputs.shape[0] * train_coeff))
     print('tr_count = {}'.format(tr_count))
     x_train = inputs[:tr_count, :]
     x_train = np.reshape(x_train, (x_train.shape[0],1,x_train.shape[1]))
