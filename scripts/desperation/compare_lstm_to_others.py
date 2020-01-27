@@ -33,7 +33,7 @@ def main(argv):
     ref_file_name = argv[3]
     
     # Read data from CSV
-    lstm_pred_biases = pd.read_csv(lstm_file_name, sep=',',
+    lstm_pred_biases = pd.read_csv(lstm_file_name, sep=';',
                                    header=0, parse_dates=[0],
                                    index_col=0, squeeze=True).values
     ref_biases = pd.read_csv(ref_file_name, sep=';', header=0,
