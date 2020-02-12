@@ -80,7 +80,7 @@ def main(argv):
     print('LAST EPOCH = {} EPOCH STEP = {}'.format(last_epoch, epoch_step))
     #sys.exit()
 
-    first_value = time_series[-1]
+    first_value = time_series[0]
     
     # Zmieniamy szereg wartości w szereg różnic pomiędzy wartościami
     time_series = diff(time_series)
