@@ -1,6 +1,6 @@
-from core.gnss.gnss_clock_data import GnssClockData
-from core.utils.gnss_clock_stats import TrivialGnssClockStats
-from core.utils.clock_data_converter import ClockDataConverter
+from scripts.core.gnss.gnss_clock_data import GnssClockData
+from scripts.core.utils.gnss_clock_stats import TrivialGnssClockStats
+from scripts.core.utils.clock_data_converter import ClockDataConverter
 
 
 # Collect train data and output it to csv (SP3 Observed data)

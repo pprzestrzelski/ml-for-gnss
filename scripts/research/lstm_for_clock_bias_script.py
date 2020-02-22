@@ -8,8 +8,8 @@ from scripts.research.lstm_utils import diff, scale, create_lstm_dataset, \
 from keras import regularizers
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import train_test_split
-from core.gnss.gnss_clock_data import GnssClockData
-from core.ml.LinearEstimator import LinearEstimator
+from scripts.core.gnss.gnss_clock_data import GnssClockData
+from scripts.core.ml.LinearEstimator import LinearEstimator
 
 
 # # Parameters

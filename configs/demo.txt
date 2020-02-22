@@ -1,8 +1,0 @@
-sequence_size=10
-batch_size=1
-hidden_size=20
-sequence_shift=1
-loss_function=mean_squared_error
-steps_per_epoch=1000
-epochs=4
-step=1

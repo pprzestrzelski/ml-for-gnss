@@ -1,5 +1,6 @@
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+import logging
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
 rcParams['font.size'] = 10
@@ -90,7 +91,7 @@ def plot_lstm_loss(history, print_plot=False):
 def plot_raw_data(data, print_plot=False):
     plt.plot(data, 'k')
     epochs = len(data)
-    print("Plot GNSS clock data")
+    logging.info("Plot GNSS clock data")
     plt.xlabel('Epoka')
     plt.ylabel('Opóźnienie [ns]')
     plt.xticks(np.arange(0, epochs, 192))
@@ -107,9 +108,9 @@ def plot_raw_data(data, print_plot=False):
 def plot_differences(data, print_plot=False):
     plt.plot(data, 'k')
     epochs = len(data)
-    print("Plot differences")
-    print("Max diff:", max(data))
-    print("Min diff:", min(data))
+    logging.info("Plot differences")
+    logging.info("Max diff: {}".format(max(data)))
+    logging.info("Min diff: {}".format(min(data)))
     plt.xlabel('Epoka')
     plt.ylabel('Różnica opóźnień [ns]')
     plt.xticks(np.arange(0, epochs, 192))
@@ -124,11 +125,11 @@ def plot_differences(data, print_plot=False):
 
 
 def plot_scaled_values(data, print_plot=False):
-    print("Plot scaled data")
-    print("Max scaled:", max(data))
-    print("Min scaled:", min(data))
-    print("Mean value:", np.mean(data))
-    print("Std dev:", np.std(data))
+    logging.info("Plot scaled data")
+    logging.info("Max scaled:", max(data))
+    logging.info("Min scaled:", min(data))
+    logging.info("Mean value:", np.mean(data))
+    logging.info("Std dev:", np.std(data))
     plt.plot(data, 'k')
     epochs = len(data)
     plt.xlabel('Epoka')

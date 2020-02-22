@@ -1,4 +1,4 @@
-from core.gnss.gnss_date import GnssDate
+from scripts.core.gnss.gnss_date import GnssDate
 
 
 class RinexClockFile:
