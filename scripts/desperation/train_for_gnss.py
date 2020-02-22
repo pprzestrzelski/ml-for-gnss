@@ -29,8 +29,9 @@ def build_output_file_path(output_dir, sat_name, model_name, suffix, ext):
     return os.path.join(output_dir, file_name)
 
 def save_network_history(history, model_name, sat_name, output_dir):
-    output_file_name = '{}_{}_training_history'
-    loss = history.history['loss']
+    loss = history.to_csv(build_output_file_path(output_dir, sat_name,
+                                                 model_name, 'history',
+                                                 '.csv'))
     val_loss = history.history['val_loss']
     epochs = range(1, len(loss)+1)
     plt.figure()
@@ -44,8 +45,8 @@ def save_network_history(history, model_name, sat_name, output_dir):
     plt.xticks(np.arange(0, len(loss)+10, 10))
 
     rcParams['figure.figsize'] = (5.5, 3)
-    file_name = '{}_{}_training_history.png'.format(file_name)
-    file_path = os.path.join(save_dir, file_name)
+    file_path = build_output_file_path(output_dir, sat_name, model_name,
+                                       'history', '.png')
     plt.savefig(file_path, bbox_inches='tight')
 
 
@@ -54,10 +55,12 @@ def train_networks(input_size, epochs, x_train, y_train, x_test, y_test):
     histories = {}
     
     for name, model in models.items():
-        history = model.fit(x_train, y_train, epochs=epochs, batch_size=32,
+        try:
+            history = model.fit(x_train, y_train, epochs=epochs, batch_size=32,
                             validation_data=(x_test, y_test), shuffle=False)
-        histories[name] = history
-
+            histories[name] = history
+        except Exception as e:
+            print('Exception during training.')
     return models, histories
 
 def prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent)
@@ -84,10 +87,20 @@ def prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent
 
     return x_train, y_train, x_test, y_test
 
-def save_output(sat_name, output_dir, models, histories):
+def save_outputs(sat_name, output_dir, models, histories):
     for model_name in models.keys():
-        plot_lstm_loss(history, model_name, sat_name, output_dir)
-
+        try:
+            save_network_history(history, model_name, sat_name, output_dir)
+            model_json = models[model_name].to_json()
+            file_path = build_output_file_path(output_dir, sat_name, model_name,
+                                               'model', '.json')
+            with open(file_path, "w") as json_file:
+                json_file.write(model_json)
+                file_path = build_output_file_path(output_dir, sat_name, model_name,
+                                                   'weights', '.h5')
+                model.save_weights(file_path)
+        except Exception as e:
+            print('Exception during saving, those can be usually ignored.')
     
 def main(argv):
     csv_file_name = argv[1]
@@ -100,22 +113,13 @@ def main(argv):
     scale = float(argv[8])
 
     
-    prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent)
-    train_networks(input_size, epochs, x_train, y_train, x_test, y_test)
-
-    # Zapisywanie wyników
-    plot_lstm_loss(history, argv[7], argv[6])
-    file_name = argv[6]
-    file_name = '{}_model.json'.format(file_name)
-    file_path = os.path.join(argv[7], file_name)
-    model_json = model.to_json()
-    with open(file_path, "w") as json_file:
-        json_file.write(model_json)
-    file_name = argv[6]
-    file_name = '{}_weights.h5'.format(file_name)
-    file_path = os.path.join(argv[7], file_name)
-    model.save_weights(file_path)
-    print('Model saved do not worry about exception.')
+    x_train, y_train, x_test, y_test = prepare_data(csv_file_name, column_name,
+                                                    scale, input_size,
+                                                    train_coefficent)
+    models, histories = train_networks(input_size, epochs, x_train, y_train,
+                                       x_test, y_test)
+    save_outputs(sat_name, output_dir, models, histories):
+    
 
 
 if __name__ == '__main__':
