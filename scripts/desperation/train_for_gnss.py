@@ -16,7 +16,7 @@ import tensorflow as tf
 from keras import regularizers
 from math import floor
 import os
-
+from network_models import build_models
 
 def diff(dataset):
     diffs = list()
@@ -63,7 +63,7 @@ def train_networks(input_size, epochs, x_train, y_train, x_test, y_test):
             print('Exception during training.')
     return models, histories
 
-def prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent)
+def prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent):
     dataset = pd.read_csv(csv_file_name, sep=';')
     time_series = dataset[column_name].to_numpy()
     time_series = diff(time_series)
@@ -77,7 +77,7 @@ def prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent
     inputs = np.asarray(inputs)
     outputs = np.asarray(outputs)
 
-    tr_count = int(floor(inputs.shape[0] * train_coeff))
+    tr_count = int(floor(inputs.shape[0] * train_coefficent))
     x_train = inputs[:tr_count, :]
     x_train = np.reshape(x_train, (x_train.shape[0],1,x_train.shape[1]))
     y_train = outputs[:tr_count]
@@ -100,7 +100,7 @@ def save_outputs(sat_name, output_dir, models, histories):
                                                    'weights', '.h5')
                 model.save_weights(file_path)
         except Exception as e:
-            print('Exception during saving, those can be usually ignored.')
+            print('Exception during saving -> {}'.format(str(e)))
     
 def main(argv):
     csv_file_name = argv[1]
@@ -118,7 +118,7 @@ def main(argv):
                                                     train_coefficent)
     models, histories = train_networks(input_size, epochs, x_train, y_train,
                                        x_test, y_test)
-    save_outputs(sat_name, output_dir, models, histories):
+    save_outputs(sat_name, output_dir, models, histories)
     
 
 

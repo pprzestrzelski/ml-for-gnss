@@ -1,3 +1,12 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+import pandas as pd
+import tensorflow as tf
+from keras import regularizers
+from math import floor
+
+
 
 
 def build_ll_model(input_size:int, input_shape: int, hidden_factor: int):
