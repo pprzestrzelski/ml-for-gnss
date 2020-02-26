@@ -32,7 +32,7 @@ def save_network_history(history, model_name, sat_name, output_dir):
     hist_df = pd.DataFrame.from_dict(history.history, orient="index")
     loss = hist_df.to_csv(build_output_file_path(output_dir, sat_name,
                                                  model_name, 'history',
-                                                 '.csv'))
+                                                 'csv'))
     val_loss = history.history['val_loss']
     epochs = range(1, len(loss)+1)
     plt.figure()
@@ -47,7 +47,7 @@ def save_network_history(history, model_name, sat_name, output_dir):
 
     rcParams['figure.figsize'] = (5.5, 3)
     file_path = build_output_file_path(output_dir, sat_name, model_name,
-                                       'history', '.png')
+                                       'history', 'png')
     plt.savefig(file_path, bbox_inches='tight')
 
 
@@ -91,15 +91,15 @@ def prepare_data(csv_file_name, column_name, scale, input_size, train_coefficent
 def save_outputs(sat_name, output_dir, models, histories):
     for model_name in models.keys():
         try:
-            save_network_history(histories[model_name], model_name, sat_name, output_dir)
+            # save_network_history(histories[model_name], model_name, sat_name, output_dir)
             model_json = models[model_name].to_json()
             file_path = build_output_file_path(output_dir, sat_name, model_name,
-                                               'model', '.json')
+                                               'model', 'json')
             with open(file_path, "w") as json_file:
                 json_file.write(model_json)
                 file_path = build_output_file_path(output_dir, sat_name, model_name,
-                                                   'weights', '.h5')
-                model.save_weights(file_path)
+                                                   'weights', 'h5')
+            models[model_name].save_weights(file_path)
         except Exception as e:
             raise e
             print('Exception during saving -> {}'.format(str(e)))
