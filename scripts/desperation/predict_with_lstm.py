@@ -10,24 +10,18 @@ from keras.models import model_from_json
 
 # Based on https://towardsdatascience.com/using-lstms-to-forecast-time-series-4ab688386b1f
 # noinspection DuplicatedCode
-def predict_with_lstm(model, time_series, scale, window_size, depth):
-    predictions = []
-    time_series = time_series / scale
-    windowed_data = list(time_series[-window_size:])
+def predict_with_lstm(model, windowed_data, window_size, depth):
+    predicted_data = []
+    network_inputs = copy(windowed_data)
+    
+    while depth > 0:
+        x = np.array(network_inputs.pop(0))
+        y = model.predict(x.reshape(1, 1, window_size), verbose=0)
 
-    print(window_size)
-    #sys.exit()
-    # predict!
-    for _ in range(depth):
-        predictioner = np.array(windowed_data)
-        yhat = model.predict(predictioner.reshape(1, 1, window_size), verbose=0)
-
-        # add to the memory
-        predictions.append(yhat)
-
-        # prepare window for next prediction with one new prediction
-        windowed_data.append(yhat)
-        windowed_data.pop(0)
+        if len(network_inputs) == 0:
+            predictions.append(y)
+            network_inputs.append(y)
+            depth -= 1
 
     return predictions
 
@@ -39,17 +33,11 @@ def diff(dataset):
         diffs.append(dataset[i] - dataset[i - 1])
     return np.asarray(diffs)
 
-def return_to_original_form(diffs, first_value, scale):
-    diffs = diffs / scale
-    bias = [first_value]
-    for d in diffs:
-        bias.append(bias[-1]+d)
-    return bias
-
-
-def prepare_windowed_data(input_file_name, column_name, window_size):
+def prepare_windowed_data(sat_name, column_name, input_dir,  window_size):
+    input_file_name = os.path.join(input_dir, '{}.csv'.format(sat_name))
     dataset = pd.read_csv(input_file_name, sep=';')
     time_series = dataset[column_name].to_numpy()
+    
     start_epoch = dataset['Epoch'][0]
     first_value = time_series[0]    
     time_series = diff(time_series)
@@ -65,8 +53,52 @@ def prepare_windowed_data(input_file_name, column_name, window_size):
 
     return windowed_data, first_value, start_epoch
 
+def load_networks(sat_name, networks_folder):
+    models = {}
+    weights = {}
+    networks = {}
+    for r, d, f in os.walk(networks_folder):
+        for filename in f:
+            file_info = filename.replace('.', '-').split('-')
+            if len(file_info) == 4 and file_info[0] == sat_name:
+                if file_info[3] == 'json':
+                    models[file_info[1]] = os.path.join(r, filename)
+                else:
+                    weights[file_info[1]] = os.path.join(r, filename)
+
+    for network_name in models.keys():
+        model_json = None
+        with open(models[network_name], 'r') as json_file:
+            model_json = json_file.read()
+        model = tf.keras.models.model_from_json(model_json)
+        model.load_weights(weights[network_name])
+        model.compile(loss='mse', optimizer='rmsprop')
+        networks[network_name].append(model)
+
+    return networks
+
+def build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch_step, scale):
+    predictions = np.asarray(lstm_predictions).flatten()
+    predictions = predictions / scale
+    bias = [first_value]
+    for prediction in predictions:
+        bias.append(bias[-1] + prediction)
+
+    epochs = []
+    for i in range(len(bias)):
+        last_epoch += epoch_step
+        prediction_epochs.append(last_epoch)
+
+    dataframe = pd.DataFrame({'Epoch':prediction_epochs, 'Clock_bias':bias})
+    dataframe = dataframe[['Epoch', 'Clock_bias']]
+    return dataframe
 
 
+def save_predictions(dataframe, sat_name, net_name, output_dir):
+    file_path = os.path.join(output_dir, '{}_{}.csv'.format(sat_name, net_name))
+    dataframe.to_csv(file_path, sep=';', index=False)
+
+    
 def main(argv):
 
     argc = len(argv)
@@ -79,49 +111,25 @@ def main(argv):
         return
 
     # Dla trochę lepszej czytelności
-    input_file_name = argv[1]
+    sat_name = argv[1]
     column_name = argv[2]
-    topology_file_name = argv[3]
-    weights_file_name = argv[4]
+    input_dir = argv[3]
+    model_dir = argv[4]
     input_size = int(argv[5])
     prediction_depth = int(argv[6])
     scale = float(argv[7])
-    output_file_name = argv[8]
+    output_dir = argv[8]
     last_epoch = float(argv[9])
     epoch_step = float(argv[10])
-
-    windowed_data, first_value, start_epoch = prepare_windowed_data(input_file_name, column_name, window_size)
-
-    # Wczytujemy topologię i parametry naszej sieci neuronowej
-    model_json = None
-    with open(topology_file_name, 'r') as json_file:
-        model_json = json_file.read()
-    model = tf.keras.models.model_from_json(model_json)
-
-    # Doczytujemy do modelu wagi
-    model.load_weights(weights_file_name)
-
-    # Kompilujemy model, parametry ustawione na sztywno tak jak w skrypcie uczącym
-    # paskudny antipattern
-    model.compile(loss='mse', optimizer='rmsprop')
-
-    # Zapisujemy predykcje z modelu LSTM !!!
-    lstm_predictions = predict_with_lstm(model, time_series, scale,
-                                         input_size, prediction_depth)
-
-    bias = return_to_original_form(np.asarray(lstm_predictions).flatten(), first_value, scale)
-    prediction_epochs = []
-    for i in range(len(bias)):
-        print('DEPTH = {} EPOCH = {} STEP = {}'.format(i, last_epoch, epoch_step))
-        last_epoch += epoch_step
-        prediction_epochs.append(last_epoch)
     
-    print(time_series.shape)
-    data = {'Epoch':prediction_epochs, 'Clock_bias':bias}
-    dataframe = pd.DataFrame(data)
-    dataframe = dataframe[['Epoch', 'Clock_bias']]
-    print(dataframe.head())
-    dataframe.to_csv(output_file_name, sep=';', index=False)
+    windowed_data, first_value, start_epoch = prepare_windowed_data(sat_name, column_name, input_dir,  window_size)
+    networks = load_networks(sat_name, networks_folder)
+    
+    for net_name, net_model in networks.items():
+        predictions = predict_with_lstm(net_model, windowed_data, window_size, depth)
+        dataframe = build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch_step, scale)
+        save_predictions(dataframe, sat_name, net_name, output_dir)
+
 
 if __name__ == '__main__':
     main(sys.argv)
