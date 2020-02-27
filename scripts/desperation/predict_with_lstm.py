@@ -46,6 +46,27 @@ def return_to_original_form(diffs, first_value, scale):
         bias.append(bias[-1]+d)
     return bias
 
+
+def prepare_windowed_data(input_file_name, column_name, window_size):
+    dataset = pd.read_csv(input_file_name, sep=';')
+    time_series = dataset[column_name].to_numpy()
+    start_epoch = dataset['Epoch'][0]
+    first_value = time_series[0]    
+    time_series = diff(time_series)
+    time_series = time_series / scale
+
+    endpoint = len(time_series)
+    startpoint = endpoint - window_size
+    windowed_data = []
+    while startpoint >= 0 :
+        windowed_data.append(time_series[startpoint:endpoint])
+        endpoint = startpoint
+        startpoint = endpoint - window_size
+
+    return windowed_data, first_value, start_epoch
+
+
+
 def main(argv):
 
     argc = len(argv)
@@ -69,21 +90,7 @@ def main(argv):
     last_epoch = float(argv[9])
     epoch_step = float(argv[10])
 
-    # Wczytujemy dane plik z danymi podany jako pierwszy argument w terminalu
-    dataset = pd.read_csv(input_file_name, sep=';')
-
-    # Wyciągamy interesujące nas dane z zbioru danych, nazwa kolumny jest podana
-    # jako drugi parametr
-    time_series = dataset[column_name].to_numpy()
-    start_epoch = dataset['Epoch'][0]
-
-    print('LAST EPOCH = {} EPOCH STEP = {}'.format(last_epoch, epoch_step))
-    #sys.exit()
-
-    first_value = time_series[0]
-    
-    # Zmieniamy szereg wartości w szereg różnic pomiędzy wartościami
-    time_series = diff(time_series)
+    windowed_data, first_value, start_epoch = prepare_windowed_data(input_file_name, column_name, window_size)
 
     # Wczytujemy topologię i parametry naszej sieci neuronowej
     model_json = None
