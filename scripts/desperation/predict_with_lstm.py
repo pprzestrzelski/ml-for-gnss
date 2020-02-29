@@ -46,14 +46,14 @@ def prepare_windowed_data(sat_name, column_name, input_dir,  window_size, scale)
     first_value = time_series[0]    
     time_series = diff(time_series)
     time_series = time_series / scale
-
-    endpoint = len(time_series)
-    startpoint = endpoint - window_size
+    
+    startpoint = 0
+    endpoint = startpoint + window_size
     windowed_data = []
-    while startpoint >= 0 :
+    while endpoint <= len(time_series) :
         windowed_data.append(time_series[startpoint:endpoint])
-        endpoint = startpoint
-        startpoint = endpoint - window_size
+        startpoint += 1
+        endpoint += 1
 
     return windowed_data, first_value, start_epoch
 
