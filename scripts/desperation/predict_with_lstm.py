@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import copy
 from keras.models import model_from_json
 
 
@@ -12,18 +14,20 @@ from keras.models import model_from_json
 # noinspection DuplicatedCode
 def predict_with_lstm(model, windowed_data, window_size, depth):
     predicted_data = []
-    network_inputs = copy(windowed_data)
-    
+    network_inputs = copy.copy(windowed_data)
+
     while depth > 0:
         x = np.array(network_inputs.pop(0))
         y = model.predict(x.reshape(1, 1, window_size), verbose=0)
 
         if len(network_inputs) == 0:
-            predictions.append(y)
-            network_inputs.append(y)
+            predicted_data.append(y)
+            window = np.delete(x, 0, 0)
+            window= np.append(window, y)
+            network_inputs.append(window)
             depth -= 1
 
-    return predictions
+    return predicted_data
 
 
 # noinspection DuplicatedCode
@@ -33,7 +37,7 @@ def diff(dataset):
         diffs.append(dataset[i] - dataset[i - 1])
     return np.asarray(diffs)
 
-def prepare_windowed_data(sat_name, column_name, input_dir,  window_size):
+def prepare_windowed_data(sat_name, column_name, input_dir,  window_size, scale):
     input_file_name = os.path.join(input_dir, '{}.csv'.format(sat_name))
     dataset = pd.read_csv(input_file_name, sep=';')
     time_series = dataset[column_name].to_numpy()
@@ -57,9 +61,12 @@ def load_networks(sat_name, networks_folder):
     models = {}
     weights = {}
     networks = {}
+    print('{}'.format(networks_folder))
     for r, d, f in os.walk(networks_folder):
+        print('bb')
         for filename in f:
-            file_info = filename.replace('.', '-').split('-')
+            file_info = filename.replace('.', '_').split('_')
+            print('{}'.format(file_info))
             if len(file_info) == 4 and file_info[0] == sat_name:
                 if file_info[3] == 'json':
                     models[file_info[1]] = os.path.join(r, filename)
@@ -68,17 +75,19 @@ def load_networks(sat_name, networks_folder):
 
     for network_name in models.keys():
         model_json = None
+        print('Compiling network : {}'.format(network_name))
+        print('Loading model from {}'.format(models[network_name]))
         with open(models[network_name], 'r') as json_file:
             model_json = json_file.read()
         model = tf.keras.models.model_from_json(model_json)
+        print('Loading weights from {}'.format(weights[network_name]))
         model.load_weights(weights[network_name])
-        model.compile(loss='mse', optimizer='rmsprop')
-        networks[network_name].append(model)
+        networks[network_name] = model
 
     return networks
 
 def build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch_step, scale):
-    predictions = np.asarray(lstm_predictions).flatten()
+    predictions = np.asarray(predictions).flatten()
     predictions = predictions / scale
     bias = [first_value]
     for prediction in predictions:
@@ -87,9 +96,9 @@ def build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch
     epochs = []
     for i in range(len(bias)):
         last_epoch += epoch_step
-        prediction_epochs.append(last_epoch)
+        epochs.append(last_epoch)
 
-    dataframe = pd.DataFrame({'Epoch':prediction_epochs, 'Clock_bias':bias})
+    dataframe = pd.DataFrame({'Epoch':epochs, 'Clock_bias':bias})
     dataframe = dataframe[['Epoch', 'Clock_bias']]
     return dataframe
 
@@ -122,11 +131,11 @@ def main(argv):
     last_epoch = float(argv[9])
     epoch_step = float(argv[10])
     
-    windowed_data, first_value, start_epoch = prepare_windowed_data(sat_name, column_name, input_dir,  window_size)
-    networks = load_networks(sat_name, networks_folder)
+    windowed_data, first_value, start_epoch = prepare_windowed_data(sat_name, column_name, input_dir,  input_size, scale)
+    networks = load_networks(sat_name, model_dir)
     
     for net_name, net_model in networks.items():
-        predictions = predict_with_lstm(net_model, windowed_data, window_size, depth)
+        predictions = predict_with_lstm(net_model, windowed_data, input_size, prediction_depth)
         dataframe = build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch_step, scale)
         save_predictions(dataframe, sat_name, net_name, output_dir)
 
