@@ -1,4 +1,5 @@
 import numpy as np
+import json
 
 class DataPrerocessing:
 
@@ -49,3 +50,14 @@ class DataPrerocessing:
         epochs = np.full(predictions.shape, self.epoch_step)
         np.insert(epochs, self.final_epoch, 0)
         return np.cumsum(epochs)
+
+    def to_json(self, filename:str):
+        with open(filename, 'w') as json_file:
+            json.dump(vars(self), json_file)
+
+    @staticmethod
+    def load_json(filename:str):
+        config = None
+        with open(filename, 'r') as json_file:
+            config = json.load(json_file)
+        return DataPrerocessing(**config)
