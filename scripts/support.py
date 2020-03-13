@@ -25,9 +25,9 @@ class DataPrerocessing:
     def fit_transform_bias(self, bias: np.ndarray, lock_scaling:bool)-> np.ndarray:
         self.initial_bias = bias[0]
         transformed = np.diff(bias)
-        if not self.lock_scaling: self.mean = np.mean(transformed)
+        if not lock_scaling: self.mean = np.mean(transformed)
         transformed = transformed - self.mean
-        if not self.lock_scaling: self.scale = 1.0 / np.amax(np.absolute(transformed))
+        if not lock_scaling: self.scale = 1.0 / np.amax(np.absolute(transformed))
         transformed = transformed * self.scale
         return transformed
 
@@ -35,7 +35,8 @@ class DataPrerocessing:
         windows = []
         step = 0
         while step + self.window_size <= transformed.shape[0]:
-            windows.append(transformed[step:step_self.window_size])
+            windows.append(transformed[step:step+self.window_size])
+            step += 1
         return np.asarray(windows)
 
     def reverse_transform(self, bias: np.ndarray)-> np.ndarray:
@@ -44,4 +45,7 @@ class DataPrerocessing:
         np.insert(bias, 0, self.initial_bias)
         return np.cumsum(bias)
 
-    
+    def build_epochs_for_prediction(self, predictions: np.ndarray)-> np.ndarray:
+        epochs = np.full(predictions.shape, self.epoch_step)
+        np.insert(epochs, self.final_epoch, 0)
+        return np.cumsum(epochs)
