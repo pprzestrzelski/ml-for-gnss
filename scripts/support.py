@@ -4,7 +4,7 @@ import json
 class DataPrerocessing:
 
     def __init__(self, window_size=32, initial_bias=0.0, initial_epoch=0.0, final_epoch=0.0,
-                 epoch_step=0.0, mean=0.0, scale=1.0):
+                 epoch_step=0.0, mean=0.0, scale=1.0, training_coefficent=0.3):
         self.initial_bias = initial_bias
         self.initial_epoch = initial_epoch
         self.final_epoch = final_epoch
@@ -12,6 +12,7 @@ class DataPrerocessing:
         self.mean = mean
         self.scale = scale
         self.window_size = window_size
+        self.training_coefficent = training_coefficent
 
     def fit_transform(self, bias: np.ndarray, epochs: np.ndarray, lock_scaling:bool)-> np.ndarray:
         self.fit_epochs(epochs)
@@ -55,9 +56,28 @@ class DataPrerocessing:
         with open(filename, 'w') as json_file:
             json.dump(vars(self), json_file)
 
+    def get_windowed_data(self, transformed: np.ndarray):
+        windows = []
+        outputs = []
+        step = 0
+        while step + self.window_size < transformed.shape[0]:
+            windows.append(transformed[step:step+self.window_size])
+            outputs.append(transformed[step+self.window_size])
+            step += 1
+        return np.asarray(windows), np.asarray(windows)
+
+    def split_training_and_validation(self, inputs: np.ndarray, outputs: np.ndarray):
+        train_size = floor(len(inputs*self.train_coefficent))
+        x_train = inputs[:train_size]
+        y_train = outputs[:train_size]
+        x_test = inputs[train_size:]
+        y_test = outputs[train_size:]
+        return x_train, y_train, x_test, y_test
+
+
     @staticmethod
     def load_json(filename:str):
         config = None
         with open(filename, 'r') as json_file:
             config = json.load(json_file)
-        return DataPrerocessing(**config)
+        return DataPrerocessing(**config)    
