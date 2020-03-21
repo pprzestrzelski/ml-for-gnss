@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import math
 
 class DataPrerocessing:
 
@@ -17,7 +18,7 @@ class DataPrerocessing:
     def fit_transform(self, bias: np.ndarray, epochs: np.ndarray, lock_scaling:bool)-> np.ndarray:
         self.fit_epochs(epochs)
         transformed = self.fit_transform_bias(bias, lock_scaling)
-        return self.prepare_windowed_data(transformed)
+        return transformed
 
     def fit_epochs(self, epochs: np.ndarray):
         self.initial_epoch = epochs[0]
@@ -35,11 +36,13 @@ class DataPrerocessing:
 
     def prepare_windowed_data(self, transformed: np.ndarray)-> np.ndarray:
         windows = []
+        outputs = []
         step = 0
-        while step + self.window_size <= transformed.shape[0]:
+        while step + self.window_size < transformed.shape[0]:
             windows.append(transformed[step:step+self.window_size])
+            outputs.append(transformed[step+self.window_size])
             step += 1
-        return np.asarray(windows)
+        return np.asarray(windows), np.asarray(outputs)
 
     def reverse_transform(self, bias: np.ndarray)-> np.ndarray:
         bias /= self.scale
@@ -64,10 +67,10 @@ class DataPrerocessing:
             windows.append(transformed[step:step+self.window_size])
             outputs.append(transformed[step+self.window_size])
             step += 1
-        return np.asarray(windows), np.asarray(windows)
+        return np.asarray(windows), np.asarray(outputs)
 
     def split_training_and_validation(self, inputs: np.ndarray, outputs: np.ndarray):
-        train_size = floor(len(inputs*self.train_coefficent))
+        train_size = math.floor(len(inputs*self.training_coefficent))
         x_train = inputs[:train_size]
         y_train = outputs[:train_size]
         x_test = inputs[train_size:]
