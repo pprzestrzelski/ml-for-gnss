@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 from support import DataPrerocessing
 from network_builder import build_models
+import sys
 
 
 def train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test):
@@ -10,12 +11,10 @@ def train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test):
     histories = {}
     
     for name, model in models.items():
-        try:
-            history = model.fit(x_train, y_train, epochs=epochs, batch_size=32,
+        history = model.fit(x_train, y_train, epochs=epochs, batch_size=32,
                             validation_data=(x_test, y_test), shuffle=False)
-            histories[name] = history
-        except Exception as e:
-            print(e)
+        histories[name] = history
+        
     return models, histories
 
 
@@ -25,10 +24,10 @@ def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name:
                    sat_name: str, output_dir: str):
     dataframe = pd.read_csv(csv_file_name, sep=';')
     bias = dataframe[bias_column_name].to_numpy()
-    epochs = dataframe[epoch_column_name].to_numpy()
+    clock_epochs = dataframe[epoch_column_name].to_numpy()
     
     preprocessor = DataPrerocessing()
-    processed = preprocessor.fit_transform(bias, epochs, False)
+    processed = preprocessor.fit_transform(bias, clock_epochs, False)
     x, y = preprocessor.prepare_windowed_data(processed)
     x_train, y_train, x_test, y_test = preprocessor.split_training_and_validation(x, y)
     x_train = np.reshape(x_train, (x_train.shape[0],1,x_train.shape[1]))

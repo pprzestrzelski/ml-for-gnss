@@ -70,7 +70,7 @@ class DataPrerocessing:
         return np.asarray(windows), np.asarray(outputs)
 
     def split_training_and_validation(self, inputs: np.ndarray, outputs: np.ndarray):
-        train_size = math.floor(len(inputs*self.training_coefficent))
+        train_size = math.floor(len(inputs)*self.training_coefficent)
         x_train = inputs[:train_size]
         y_train = outputs[:train_size]
         x_test = inputs[train_size:]
