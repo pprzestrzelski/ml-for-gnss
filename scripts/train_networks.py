@@ -4,7 +4,7 @@ import argparse
 from support import DataPrerocessing
 from network_builder import build_models
 import sys
-
+import os
 
 def train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test):
     models = build_models(input_size, (None, x_train.shape[-1]))
@@ -17,6 +17,30 @@ def train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test):
         
     return models, histories
 
+
+def build_output_file_path(output_dir, sat_name, model_name, suffix, ext):
+    file_name = '{}_{}_{}.{}'.format(sat_name, model_name, suffix, ext)
+    return os.path.join(output_dir, file_name)
+
+
+def save_outputs(sat_name, output_dir, models, histories, preprocessor):
+    preprocessor_file = '{}_preprocessor.json'.format(sat_name)
+    preprocessor_file = os.path.join(output_dir, preprocessor_file)
+    preprocessor.to_json(preprocessor_file)
+    for model_name in models.keys():
+        try:
+            # save_network_history(histories[model_name], model_name, sat_name, output_dir)
+            model_json = models[model_name].to_json()
+            file_path = build_output_file_path(output_dir, sat_name, model_name,
+                                               'model', 'json')
+            with open(file_path, "w") as json_file:
+                json_file.write(model_json)
+                file_path = build_output_file_path(output_dir, sat_name, model_name,
+                                                   'weights', 'h5')
+            models[model_name].save_weights(file_path)          
+        except Exception as e:
+            raise e
+            print('Exception during saving -> {}'.format(str(e)))
 
 
 def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name: str,
@@ -33,7 +57,7 @@ def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name:
     x_train = np.reshape(x_train, (x_train.shape[0],1,x_train.shape[1]))
     x_test = np.reshape(x_test, (x_test.shape[0],1,x_test.shape[1]))
     models, histories = train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test)
-    
+    save_outputs(sat_name, output_dir, models, histories, preprocessor)
 
 def parse_arguments()-> argparse.ArgumentParser:
     desc = '''Script uses provided input data to teach a neural network'''
