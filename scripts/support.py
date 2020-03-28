@@ -59,6 +59,7 @@ class DataPrerocessing:
         with open(filename, 'w') as json_file:
             json.dump(vars(self), json_file)
 
+    # FIXME: DUPLCATE OF prepare_widnowed_data
     def get_windowed_data(self, transformed: np.ndarray):
         windows = []
         outputs = []
