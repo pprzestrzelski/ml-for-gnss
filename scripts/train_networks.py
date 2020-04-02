@@ -50,7 +50,7 @@ def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name:
     bias = dataframe[bias_column_name].to_numpy()
     clock_epochs = dataframe[epoch_column_name].to_numpy()
     
-    preprocessor = DataPrerocessing()
+    preprocessor = DataPrerocessing(training_coefficent=train_coefficent)
     processed = preprocessor.fit_transform(bias, clock_epochs, False)
     x, y = preprocessor.prepare_windowed_data(processed)
     x_train, y_train, x_test, y_test = preprocessor.split_training_and_validation(x, y)

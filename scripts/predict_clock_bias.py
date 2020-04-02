@@ -86,7 +86,7 @@ def predict_bias(in_file: str, model_dir: str, bias_column: str, epoch_column: s
         df = build_dataframe_from_predictions(predictions, preprocessor.initial_bias, first_epoch, epoch_step,
                                               preprocessor.scale)
         out_file = os.path.join(output_dir,'{}_{}.csv'.format(sat_name, net_name))
-        df.to_csv(out_file, separator=';', index=False)
+        df.to_csv(out_file, sep=';', index=False)
     
 
 def parse_arguments()-> argparse.ArgumentParser:
