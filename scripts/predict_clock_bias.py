@@ -79,7 +79,7 @@ def predict_bias(in_file: str, model_dir: str, bias_column: str, epoch_column: s
     dataframe = pd.read_csv(in_file, sep=';')
     bias = dataframe[bias_column].to_numpy()
     preprocessor, networks = load_models(sat_name, model_dir)
-    bias = preprocessor.fit_transform_bias(bias, True)
+    bias = preprocessor.fit_transform_bias(bias, False)
     x, y = preprocessor.prepare_windowed_data(bias)
     for net_name, network in networks.items():
         predictions = prediction_core(network, x, preprocessor.window_size, prediction_depth)
@@ -92,15 +92,46 @@ def predict_bias(in_file: str, model_dir: str, bias_column: str, epoch_column: s
 def parse_arguments()-> argparse.ArgumentParser:
     desc = '''Script uses provided input data to teach a neural network'''
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('-i', '--input', help='csv with clock bias')
-    parser.add_argument('-m', '--models', help='directory that hold models for networks and preprocessor')
-    parser.add_argument('-b', '--bias_column_name', help='name of clock bias column')
-    parser.add_argument('-e', '--epoch_column_name', help='name of epoch column')
-    parser.add_argument('-d', '--prediction_depth', help='how many entreis should be predicted', type=int)
-    parser.add_argument('-f', '--first_epoch', help='first epoch in prediction', type=float)
-    parser.add_argument('-s', '--epoch_step', help='name of epoch column', type=float)
-    parser.add_argument('-o', '--output_dir', help='directory where output files will be saved')
-    parser.add_argument('-n', '--sat_name', help='name of satellite used for generating output files')
+    parser.add_argument('-i', '--input',
+                        help='csv with clock bias',
+                        type=str,
+                        required=True)
+    parser.add_argument('-m', '--models',
+                        help='directory that hold models for networks and preprocessor',
+                        type=str,
+                        required=True)
+    parser.add_argument('-b', '--bias_column_name',
+                        help='name of clock bias column',
+                        type=str,
+                        default='Clock_bias')
+    parser.add_argument('-c', '--epoch_column_name',
+                        help='name of epoch column',
+                        type=str,
+                        default='Epoch')
+    parser.add_argument('-d', '--prediction_depth',
+                        help='how many entreis should be predicted',
+                        type=int,
+                        default=95)
+    parser.add_argument('-f', '--first_epoch',
+                        help='first epoch in prediction',
+                        type=float,
+                        default=2010.0)
+    parser.add_argument('-e', '--epoch_step',
+                        help='step between epochs',
+                        type=float,
+                        default=0.001488095238)
+    parser.add_argument('-o', '--output_dir',
+                        help='directory where output files will be saved',
+                        type=str,
+                        required=True)
+    parser.add_argument('-n', '--sat_name',
+                        help='name of satellite used for generating output files',
+                        type=str,
+                        required=True)
+    parser.add_argument('-s', '--scale',
+                        help='when set forces a given scaling factor',
+                        type=float,
+                        default=None)
     return parser.parse_args()
 
 

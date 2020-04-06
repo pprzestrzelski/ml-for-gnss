@@ -59,17 +59,46 @@ def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name:
     models, histories = train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test)
     save_outputs(sat_name, output_dir, models, histories, preprocessor)
 
+
 def parse_arguments()-> argparse.ArgumentParser:
     desc = '''Script uses provided input data to teach a neural network'''
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('-i', '--input', help='csv with clock bias')
-    parser.add_argument('-b', '--bias_column_name', help='name of clock bias column')
-    parser.add_argument('-c', '--epoch_column_name', help='name of epoch column')
-    parser.add_argument('-l', '--input_size', help='length of neural network input vector', type=int)
-    parser.add_argument('-e', '--epochs', help='how many epochs should be used for training', type=int)
-    parser.add_argument('-t', '--train_coefficent', help='part of data that will be used for training (from 0 to 1)', type=float)
-    parser.add_argument('-n', '--sat_name', help='name of satellite that will be used in output files')
-    parser.add_argument('-o', '--output_dir', help='directory where output files will be saved')
+    parser.add_argument('-i', '--input',
+                        help='csv with clock bias',
+                        type=str,
+                        required=True)
+    parser.add_argument('-b', '--bias_column_name',
+                        help='name of clock bias column',
+                        type=str,
+                        default='Clock_bias')
+    parser.add_argument('-c', '--epoch_column_name',
+                        help='name of epoch column',
+                        type=str,
+                        default='Epoch')
+    parser.add_argument('-l', '--input_size',
+                        help='length of neural network input vector',
+                        type=int,
+                        default=32)
+    parser.add_argument('-e', '--epochs',
+                        help='how many epochs should be used for training',
+                        type=int,
+                        default=10)
+    parser.add_argument('-t', '--train_coefficent',
+                        help='part of data that will be used for training (from 0 to 1)',
+                        type=float,
+                        default=0.8)
+    parser.add_argument('-n', '--sat_name',
+                        help='name of satellite that will be used in output files',
+                        type=str,
+                        required=True)
+    parser.add_argument('-o', '--output_dir',
+                        help='directory where output files will be saved',
+                        type=str,
+                        required=True)
+    parser.add_argument('-s', '--scale',
+                        help='when set forces a given scaling factor',
+                        type=float,
+                        default=None)
     return parser.parse_args()
 
 
