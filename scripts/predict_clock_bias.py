@@ -128,10 +128,6 @@ def parse_arguments()-> argparse.ArgumentParser:
                         help='name of satellite used for generating output files',
                         type=str,
                         required=True)
-    parser.add_argument('-s', '--scale',
-                        help='when set forces a given scaling factor',
-                        type=float,
-                        default=None)
     return parser.parse_args()
 
 

@@ -56,11 +56,6 @@ def parse_arguments()-> argparse.ArgumentParser:
                         help='directory where output files will be saved',
                         type=str,
                         required=True)
-    parser.add_argument('-s', '--scale',
-                        help='when set forces a given scaling factor',
-                        type=float,
-                        default=None)
-
 
     
     return parser.parse_args()
