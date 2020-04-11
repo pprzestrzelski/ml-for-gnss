@@ -30,7 +30,8 @@ class DataPrerocessing:
         transformed = np.diff(bias)
         if not lock_scaling: self.mean = np.mean(transformed)
         transformed = transformed - self.mean
-        if not lock_scaling: self.scale = 1.0 / np.amax(np.absolute(transformed))
+        # Ugly but works, unlike pervious solution
+        if not lock_scaling: self.scale = 1.0/max(np.max(transformed), 0.0-np.min(transformed))
         transformed = transformed * self.scale
         return transformed
 
