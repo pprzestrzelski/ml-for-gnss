@@ -46,6 +46,7 @@ def compare_results(lstm_dir: str, igu_dir: str, ref_dir: str, out_file:str):
     rows = []
     for satellite in references.keys():
         comparition = {}
+        comparition['satellite'] = satellite
         ref_biases = pd.read_csv(references[satellite], sep=';', header=0,
                                  parse_dates=[0], index_col=0,
                                  squeeze=True).values
