@@ -56,9 +56,10 @@ def prediction_core(model, windowed_data, window_size, depth):
     return predicted_data
 
 
-def build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch_step, scale):
+def build_dataframe_from_predictions(predictions, first_value, last_epoch, epoch_step, scale, mean):
     predictions = np.asarray(predictions).flatten()
     predictions = predictions / scale
+    predictions += mean
     bias = [first_value]
     for prediction in predictions:
         bias.append(bias[-1] + prediction)
@@ -84,7 +85,7 @@ def predict_bias(in_file: str, model_dir: str, bias_column: str, epoch_column: s
     for net_name, network in networks.items():
         predictions = prediction_core(network, x, preprocessor.window_size, prediction_depth)
         df = build_dataframe_from_predictions(predictions, preprocessor.initial_bias, first_epoch, epoch_step,
-                                              preprocessor.scale)
+                                              preprocessor.scale, preprocessor.mean)
         out_file = os.path.join(output_dir,'{}_{}.csv'.format(sat_name, net_name))
         df.to_csv(out_file, sep=';', index=False)
     
