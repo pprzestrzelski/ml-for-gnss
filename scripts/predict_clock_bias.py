@@ -11,7 +11,7 @@ def load_models(sat_name:str, model_dir: str):
     preprocessor_file = os.path.join(model_dir,'{}_preprocessor.json'.format(sat_name))
     print('Loading preprocessor from {}'.format(preprocessor_file))
     preprocessor = DataPrerocessing.load_json(preprocessor_file)
-
+    print('Preprocessor loaded with mean={} and scale={}'.format(preprocessor.mean, preprocessor.scale))
     models = {}
     weights = {}
     for r, d, f in os.walk(model_dir):
@@ -79,7 +79,7 @@ def predict_bias(in_file: str, model_dir: str, bias_column: str, epoch_column: s
     dataframe = pd.read_csv(in_file, sep=';')
     bias = dataframe[bias_column].to_numpy()
     preprocessor, networks = load_models(sat_name, model_dir)
-    bias = preprocessor.fit_transform_bias(bias, False)
+    bias = preprocessor.fit_transform_bias(bias, True)
     x, y = preprocessor.prepare_windowed_data(bias)
     for net_name, network in networks.items():
         predictions = prediction_core(network, x, preprocessor.window_size, prediction_depth)
