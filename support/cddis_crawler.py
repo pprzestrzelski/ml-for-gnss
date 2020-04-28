@@ -1,25 +1,30 @@
+from ftplib import FTP
 import datetime
-import scrapy
-from scrapy.http import Request
 
-CDDIS_FTP = 'ftp://cddis.gsfc.nasa.gov/gnss/products/'
+CDDIS_FTP = 'ftp://cddis.gsfc.nasa.gov'
+IGU_DIR = 'pub/igs/products/'
 
 
-class CddisSpider(scrapy.Spider):
 
-    def __init__(self, ftp, user='anonymous', pass=''):
-        self.ftp = ftp
-        self.meta = {'ftp_user': user, 'ftp_password': pass}
-    
-    def start_requests(self):
-        yield Request(ftp, meta=self.meta)
 
-    def parse(self, response):
-        print response.body
+
 
 
 def main(ftp, start_date, end_date, out_dir):
-    pass
+    try:
+        ftp = FTP('igs.ensg.ign.fr')
+        ftp.login()
+        ftp.cwd('pub/igs/products/')
+        files = ftp.nlst()
+        for f in files:
+            try:
+                idx = int(f)
+            except:
+                pass
+        ftp.quit()
+    except Exception as e:
+        print(f'Error => {e}')
+
 
 def parse_arguments():
     desc = 'Downloads all clock bias files form CDDIS site for given time period'
