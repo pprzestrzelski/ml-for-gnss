@@ -25,7 +25,7 @@ def crawl_igu_dir(ftp, directory, out_dir):
     ftp.cwd(directory)
     files = ftp.nlst()
     for filename in files:
-        if 'sp3' in filename.split('.'):
+        if 'sp3' in filename.split('.') and filename[:3] == 'igu':
             out_file_path = os.path.join(out_dir, filename)
             print(f'Downloading {filename}')
             out_file = open(out_file_path, 'wb')

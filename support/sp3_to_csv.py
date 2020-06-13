@@ -6,10 +6,10 @@ import pandas as pd
 
 def get_input_files(input_dir):
     files = {}
-    for r, d, f in os.walk(input_folder):
+    for r, d, f in os.walk(input_dir):
         for file in f:
             if '.sp3' in file:
-                files[file.split('.')[0]] = os.path.join(r, file))
+                files[file.split('.')[0]] = os.path.join(r, file)
     return files
 
 def is_header_line(sp3_line):
@@ -27,8 +27,12 @@ def is_prediction(sat_data):
     return sat_data['orbit_prediction'] or sat_data['clock_prediction']
 
 def get_epoch_data(sp3_line):
-    pass
-
+    epoch_txt = sp3_line.split()
+    year = epoch_txt[1]
+    month = epoch_txt[2]
+    day = epoch_txt[3]
+    hour = epoch_txt[4]
+    minutes = epoch_txt[5]
 
 def get_satellite_data(sp3_line, epoch):
     pass
@@ -53,10 +57,25 @@ def sp3_to_pandas(file_name, convert_dates, include_predictions):
     dataframe = pd.DataFrame(data)
 
 
-def main(input_dir, output_dir, convert_dates):
-    files = get_input_files(input_dir)
+def check_range(files):
+    pass
     
-
+def main(input_dir, output_dir, convert_dates, include_predictions):
+    files = get_input_files(input_dir)
+    last = 0
+    first = 2020
+    for _, file_name in files.items():
+        with open(file_name, 'r') as sp3_file:
+            for sp3_line in sp3_file:
+                if is_header_line(sp3_line):
+                    continue # ignoring header lines
+                elif is_epoch_line(sp3_line):
+                    epoch_txt = sp3_line.split()
+                    year = int(epoch_txt[1])
+                    if year < first: first = year
+                    if year > last: last = year
+    print(f'First year : {first}')
+    print(f'Last year : {last}')
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
