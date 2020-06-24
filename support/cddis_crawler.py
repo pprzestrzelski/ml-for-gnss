@@ -6,6 +6,7 @@ import os
 CDDIS_FTP = 'igs.ensg.ign.fr'
 IGU_DIR = 'pub/igs/products/'
 
+# igs.ensg.ign.fr/pub/igs/products/
 
 
 def get_valid_directories(file_list, start_idx, end_idx):

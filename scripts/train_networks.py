@@ -6,8 +6,7 @@ from network_builder import build_models
 import sys
 import os
 
-def train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test):
-    models = build_models(input_size, (None, x_train.shape[-1]))
+def train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test, models):
     histories = {}
     
     for name, model in models.items():
@@ -45,7 +44,7 @@ def save_outputs(sat_name, output_dir, models, histories, preprocessor):
 
 def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name: str,
                    input_size: int, epochs: int, train_coefficent: float,
-                   sat_name: str, output_dir: str, scale: float):
+                   sat_name: str, output_dir: str, scale: float, phase:int):
     dataframe = pd.read_csv(csv_file_name, sep=';')
     bias = dataframe[bias_column_name].to_numpy()
     clock_epochs = dataframe[epoch_column_name].to_numpy()
@@ -57,7 +56,8 @@ def train_networks(csv_file_name: str, bias_column_name: str, epoch_column_name:
     x_train, y_train, x_test, y_test = preprocessor.split_training_and_validation(x, y)
     x_train = np.reshape(x_train, (x_train.shape[0],1,x_train.shape[1]))
     x_test = np.reshape(x_test, (x_test.shape[0],1,x_test.shape[1]))
-    models, histories = train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test)
+    models = build_models(input_size, (None, x_train.shape[-1]), phase)
+    models, histories = train_networks_core(input_size, epochs, x_train, y_train, x_test, y_test, models)
     save_outputs(sat_name, output_dir, models, histories, preprocessor)
 
 
@@ -100,6 +100,11 @@ def parse_arguments()-> argparse.ArgumentParser:
                         help='when set forces a given scaling factor',
                         type=float,
                         default=None)
+    parser.add_argument('-p', '--phase',
+                        help='Phase of experiment',
+                        type=int,
+                        default=2)
+
     return parser.parse_args()
 
 
@@ -108,6 +113,6 @@ if __name__ == '__main__':
     print(args)
     train_networks(args.input, args.bias_column_name, args.epoch_column_name,
                    args.input_size, args.epochs, args.train_coefficent,
-                   args.sat_name, args.output_dir, args.scale)
+                   args.sat_name, args.output_dir, args.scale, args.phase)
 
 

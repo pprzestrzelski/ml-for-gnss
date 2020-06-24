@@ -63,7 +63,24 @@ def build_ll_model_for_phase_4(input_size: int, input_shape: int, input_layer_dr
     return model
 
 
-def build_models(input_size: int, input_shape: int)-> dict:
+def build_models_for_phase_2(input_size:int, input_shape: int):
+    models = {}
+    models['LL05'] = build_ll_model(input_size, input_shape, 0.5)
+    models['LL1'] = build_ll_model(input_size, input_shape, 1)
+    models['LL2'] = build_ll_model(input_size, input_shape, 2)
+    models['LL3'] = build_ll_model(input_size, input_shape, 3)
+    models['LL4'] = build_ll_model(input_size, input_shape, 4)
+
+    models['DL05'] = build_dl_model(input_size, 0.5)
+    models['DL1'] = build_dl_model(input_size, 1)
+    models['DL2'] = build_dl_model(input_size, 2)
+    models['DL3'] = build_dl_model(input_size, 3)
+    models['DL4'] = build_dl_model(input_size, 4)
+
+    return models
+
+
+def build_models_for_phase_3(input_size: int, input_shape: int)-> dict:
     models = {}
     models['LL05'] = build_ll_model(input_size, input_shape, 0.5)
     models['LL1'] = build_ll_model(input_size, input_shape, 1)
@@ -72,3 +89,21 @@ def build_models(input_size: int, input_shape: int)-> dict:
     models['LL4'] = build_ll_model(input_size, input_shape, 4)
 
     return models
+
+
+def build_models_for_phase_4(input_size: int, input_shape: int)-> dict:
+    models = {}
+    models['low_dropouts'] = build_ll_model(input_size, input_shape, 0.1, 0.01, 0.1, 0.01, 0.001, 0.001)
+
+    return models
+
+
+model_builders = { 2: build_models_for_phase_2, 3: build_models_for_phase_3, 4: build_models_for_phase_4}
+
+
+def build_models(input_size: int, input_shape: int, phase: int)-> dict:
+    try:
+        return model_builders[phase](input_size, input_shape)
+    except KeyError:
+        print(f'Phase {phase} not supported by network builder.')
+        return {}
