@@ -5,7 +5,7 @@ from train_networks import train_networks
 
 def train_multiple_networks(input_folder: str, bias_column_name: str, epoch_column_name: str,
                             input_size: int, epochs: int, train_coefficent: float,
-                            output_dir: str, scale: float):
+                            output_dir: str, scale: float, phase: int):
     files = []
     names = []
     for r, d, f in os.walk(input_folder):
@@ -18,7 +18,7 @@ def train_multiple_networks(input_folder: str, bias_column_name: str, epoch_colu
         print('{} -> {}'.format(names[i], files[i]))
         train_networks(files[i], bias_column_name, epoch_column_name,
                        input_size, epochs, train_coefficent,
-                       names[i], output_dir, scale)
+                       names[i], output_dir, scale, phase)
 
 
 def parse_arguments()-> argparse.ArgumentParser:
@@ -56,10 +56,14 @@ def parse_arguments()-> argparse.ArgumentParser:
                         help='when set forces a given scaling factor',
                         type=float,
                         default=None)
+    parser.add_argument('-p', '--phase',
+                        help='Phase of experiment',
+                        type=int,
+                        default=2)
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_arguments()
     train_multiple_networks(args.input_directory, args.bias_column_name, args.epoch_column_name,
                             args.input_size, args.epochs, args.train_coefficent, args.output_dir,
-                            args.scale)
+                            args.scale, args.phase)
