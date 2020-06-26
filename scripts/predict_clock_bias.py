@@ -17,8 +17,9 @@ def load_models(sat_name:str, model_dir: str):
     for r, d, f in os.walk(model_dir):
         for filename in f:
             file_info = filename.replace('.', '_').split('_')
-            if len(file_info) == 4 and file_info[0] == sat_name:
-                if file_info[3] == 'json':
+            if 'preprocessor' in file_info: continue
+            if file_info[0] == sat_name:
+                if file_info[-1] == 'json':
                     models[file_info[1]] = os.path.join(r, filename)
                 else:
                     weights[file_info[1]] = os.path.join(r, filename)
