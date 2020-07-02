@@ -95,6 +95,7 @@ def build_models_for_phase_4(input_size: int, input_shape: int)-> dict:
     models = {}
     models['low_dropouts'] = build_ll_model_for_phase_4(input_size, input_shape, 0.1, 0.01, 0.1, 0.01, 0.001, 0.001, 'rmsprop')
     models['high_dropouts'] = build_ll_model_for_phase_4(input_size, input_shape, 0.5, 0.1, 0.5, 0.1, 0.001, 0.001, 'rmsprop')
+    models['no'] = build_ll_model_for_phase_4(input_size, input_shape, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 'rmsprop')
     return models
 
 
